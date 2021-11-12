@@ -7,17 +7,20 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import img from "../images/circuits.jpg";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { defineCustomElements as deckDeckGoHighlightElement } from "@deckdeckgo/highlight-code/dist/loader";
+
+deckDeckGoHighlightElement();
 
 const variants = {
-  present: ({page, direction}) => {
+  present: ({ page, direction }) => {
     return {
       y: 0,
       opacity: 1,
       zIndex: 1,
     };
   },
-  absent: ({page, direction}) => {
+  absent: ({ page, direction }) => {
     return {
       zIndex: 0,
       y: page === 1 ? -1000 : 0,
@@ -32,8 +35,8 @@ const Motionable = ({ children, direction, page, variant, ...props }) => (
     style={{ height: "100%", width: "100%", position: "absolute" }}
     animate={variant}
     variants={variants}
-    transition={{duration:0.6}}
-    custom={{page, direction}}
+    transition={{ duration: 0.6 }}
+    custom={{ page, direction }}
   >
     {children}
   </motion.div>
@@ -149,7 +152,25 @@ const Hello = () => {
                 </Flex0>
               </FlexR>
             </Flex0>
-            <Flex1></Flex1>
+            <Flex1>
+              <FlexR>
+                <Flex1></Flex1>
+                <Flex1>
+                  <deckgo-highlight-code
+                    line-numbers={false}
+                    editable={true}
+                    language="haskell"
+                  >
+                    <code slot="code">
+                      {`module HelloWorld where
+
+a = 1 :: Int`}
+                    </code>
+                  </deckgo-highlight-code>
+                </Flex1>
+                <Flex1></Flex1>
+              </FlexR>
+            </Flex1>
           </FlexC>
         </Coder>
       </Motionable>
