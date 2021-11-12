@@ -1,4 +1,5 @@
 module.exports = {
+  pathPrefix: `/wags.fm`,
   siteMetadata: {
     siteUrl: "https://wags.fm",
     title: "wags.fm",
