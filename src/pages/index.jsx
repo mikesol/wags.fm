@@ -6,21 +6,22 @@ import {
   faChevronCircleUp,
 } from "@fortawesome/free-solid-svg-icons";
 import img from "../images/circuits.jpg";
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { defineCustomElements as deckDeckGoHighlightElement } from "@deckdeckgo/highlight-code/dist/loader";
+import loadingImg from "../images/wags.fm.transparent.png";
 
 deckDeckGoHighlightElement();
 
 const variants = {
-  present: ({ page, direction }) => {
+  present: () => {
     return {
       y: 0,
       opacity: 1,
       zIndex: 1,
     };
   },
-  absent: ({ page, direction }) => {
+  absent: ({ page }) => {
     return {
       zIndex: 0,
       y: page === 1 ? -1000 : 0,
@@ -28,6 +29,56 @@ const variants = {
     };
   },
 };
+
+const LI = ({ ...props }) => (
+  <motion.img
+    {...props}
+    animate={{ rotate: 360 }}
+    transition={{ type: "spring", duration: 2.8, repeat: Infinity }}
+  />
+);
+
+const Loading = ({ loading }) => (
+  <AnimatePresence>
+    {loading && (
+      <motion.div
+        exit={{ opacity: 0 }}
+        style={{
+          backgroundColor: "#8CD9D2",
+          height: "100%",
+          width: "100%",
+          position: "absolute",
+          zIndex: 2,
+        }}
+      >
+        <FlexR>
+          <Flex1></Flex1>
+          <Flex0>
+            <FlexC>
+              <Flex1></Flex1>
+              <Flex0>
+                <div>
+                  <LI width="100px" height="100px" src={loadingImg} />
+                  <p
+                    style={{
+                      fontWeight: "600",
+                      color: "#F55CA6",
+                      textAlign: "center",
+                    }}
+                  >
+                    ...loading...
+                  </p>
+                </div>
+              </Flex0>
+              <Flex1></Flex1>
+            </FlexC>
+          </Flex0>
+          <Flex1></Flex1>
+        </FlexR>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 
 const Motionable = ({ children, direction, page, variant, ...props }) => (
   <motion.div
@@ -103,6 +154,12 @@ const bindPage = (x) => (x >= 2 ? 0 : x < 0 ? 1 : x);
 
 const Hello = () => {
   const [[page, direction], setPage] = useState([0, 0]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    setTimeout(() => {
+      setLoading(false);
+    }, 4000);
+  });
   console.log(page);
   const paginate = (newDirection) => {
     setPage([bindPage(page + newDirection), newDirection]);
@@ -174,6 +231,7 @@ a = 1 :: Int`}
           </FlexC>
         </Coder>
       </Motionable>
+      <Loading loading={loading} />
     </>
   );
 };
