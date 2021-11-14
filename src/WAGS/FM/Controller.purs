@@ -3,6 +3,7 @@ module WAGS.FM.Controller where
 import Prelude
 
 import Effect (Effect)
+import Data.Monoid (guard)
 import FRP.Event (subscribe)
 import WAGS.FM.Emitter (loopEmitter)
 import Data.List (List(..), (:))
@@ -36,8 +37,7 @@ pause { stopPlaying, setStopPlaying } =
 
 play :: PlaySig
 play { initialPage, setPage, isPlaying, setIsPlaying, setStopPlaying } =
-  if isPlaying then pure unit
-  else do
+  guard (not isPlaying) do
     pg <- new initialPage
     stopPlaying <- subscribe (loopEmitter $ 1000 :| (2000 : 4000 : Nil)) $ const do
       pg' <- read pg
