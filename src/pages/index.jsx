@@ -2,10 +2,12 @@ import React from "react";
 import { styled } from "@stitches/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faPauseCircle,
+  faPlayCircle,
   faChevronCircleDown,
   faChevronCircleUp,
 } from "@fortawesome/free-solid-svg-icons";
-import { Scrollbars } from 'react-custom-scrollbars';
+import { Scrollbars } from "react-custom-scrollbars";
 import img from "../images/circuits.jpg";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -294,7 +296,6 @@ const Hello = () => {
                       height: "100%",
                       overflowY: "scroll",
                       scrollbarWidth: "none",
-                      overflowX: "hidden"
                     }}
                   >
                     <AnimatePresence>
@@ -364,7 +365,24 @@ const Hello = () => {
                 <Flex1></Flex1>
               </FlexR>
             </Flex1>
-            <div style={{ height: "10%" }}></div>
+            <div
+              style={{
+                height: "10%",
+                display: "flex",
+                flexDirection: "row",
+                alignContent: "space-between",
+              }}
+            >
+              <Flex1></Flex1>
+              <Flex0>
+                <FontAwesomeIcon
+                  size={"2x"}
+                  style={{ paddingTop: "10px", cursor: "pointer" }}
+                  icon={faPauseCircle}
+                ></FontAwesomeIcon>
+              </Flex0>
+              <Flex1></Flex1>
+            </div>
           </FlexC>
         </Coder>
       </Motionable>
