@@ -14,6 +14,10 @@ const globalStyles = globalCss({
   body: { height: "100%", margin: 0, padding: 0, overflow: "hidden" },
   "#___gatsby": { height: "100%" },
   "#gatsby-focus-wrapper": { height: "100%" },
+  "::-webkit-scrollbar": {
+    width: "15px",
+    height: "15px",
+  },
 });
 
 export default function Layout({ children }) {
