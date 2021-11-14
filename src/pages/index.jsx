@@ -299,7 +299,7 @@ const Hello = () => {
                     }}
                   >
                     <AnimatePresence>
-                      {snippet % 3 === 0 && (
+                      {snippet % 2 === 0 && (
                         <motion.div
                           key={"code0"}
                           style={{ position: "absolute", width: "100%" }}
@@ -318,7 +318,7 @@ const Hello = () => {
                           </deckgo-highlight-code>
                         </motion.div>
                       )}
-                      {snippet % 3 === 1 && (
+                      {snippet % 2 === 1 && (
                         <motion.div
                           key={"code1"}
                           style={{
@@ -340,25 +340,7 @@ const Hello = () => {
                           </deckgo-highlight-code>
                         </motion.div>
                       )}
-                      {snippet % 3 === 2 && (
-                        <motion.div
-                          key={"code2"}
-                          style={{ position: "absolute", width: "100%" }}
-                          initial="starting"
-                          animate="present"
-                          exit="absent"
-                          variants={codeVariants}
-                          transition={{ duration: 1.2 }}
-                        >
-                          <deckgo-highlight-code
-                            line-numbers={false}
-                            editable={true}
-                            language="haskell"
-                          >
-                            <code slot="code">{long}</code>
-                          </deckgo-highlight-code>
-                        </motion.div>
-                      )}
+                      
                     </AnimatePresence>
                   </div>
                 </Flex1>
