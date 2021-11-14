@@ -293,7 +293,7 @@ const Hello = () => {
                       width: "100%",
                       height: "100%",
                       overflowY: "scroll",
-                      scrollbarWidth: "thin",
+                      scrollbarWidth: "none",
                       overflowX: "hidden"
                     }}
                   >

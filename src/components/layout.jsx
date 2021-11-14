@@ -15,8 +15,7 @@ const globalStyles = globalCss({
   "#___gatsby": { height: "100%" },
   "#gatsby-focus-wrapper": { height: "100%" },
   "::-webkit-scrollbar": {
-    width: "15px",
-    height: "15px",
+    display: "none"
   },
 });
 
