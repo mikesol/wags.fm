@@ -13,8 +13,11 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { defineCustomElements as deckDeckGoHighlightElement } from "@deckdeckgo/highlight-code/dist/loader";
 import loadingImg from "../images/wags.fm.transparent.png";
+import { pause, play } from "../../output/WAGS.FM.Controller";
 
 deckDeckGoHighlightElement();
+
+const eff = (f) => (x) => () => f(x);
 
 const codeVariants = {
   starting: () => {
@@ -218,20 +221,34 @@ wag =
 
 `;
 
+const let_ = (a) => (f) => f(a);
+
 const Hello = () => {
   const [[page, direction], setPage] = useState([0, 0]);
   const paginate = (newDirection) => {
     setPage([bindPage(page + newDirection), newDirection]);
   };
-  // snippet effect
+  // snippet
   const [snippet, setSnippet] = useState(0);
-  const incrementSnippet = () => (n) =>
-    setTimeout(() => {
-      setSnippet(n + 1);
-      incrementSnippet()(n + 1);
-    }, 8000);
+  const [stopPlaying, setStopPlaying] = let_(
+    useState({ stopPlaying: () => {} })
+  )(([x, y]) => [x.stopPlaying, (stopPlaying) => y({ stopPlaying })]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const pauser = pause({
+    stopPlaying,
+    setIsPlaying: eff(setIsPlaying),
+    setStopPlaying: eff(setStopPlaying),
+  });
+  const player = play({
+    snippet,
+    setStopPlaying: eff(setStopPlaying),
+    setSnippet: eff(setSnippet),
+    isPlaying,
+    setIsPlaying: eff(setIsPlaying),
+  });
+  // for testing purposes, launch player immediately
   useEffect(() => {
-    incrementSnippet()(snippet);
+    player();
   }, []);
   // loadingEffect
   const [loading, setLoading] = useState(true);
@@ -310,6 +327,7 @@ const Hello = () => {
                           transition={{ duration: 1.2 }}
                         >
                           <deckgo-highlight-code
+                            onClick={pauser}
                             line-numbers={false}
                             editable={true}
                             language="haskell"
@@ -332,6 +350,7 @@ const Hello = () => {
                           transition={{ duration: 1.2 }}
                         >
                           <deckgo-highlight-code
+                            onClick={pauser}
                             line-numbers={false}
                             editable={true}
                             language="haskell"
@@ -340,7 +359,6 @@ const Hello = () => {
                           </deckgo-highlight-code>
                         </motion.div>
                       )}
-                      
                     </AnimatePresence>
                   </div>
                 </Flex1>
@@ -360,7 +378,8 @@ const Hello = () => {
                 <FontAwesomeIcon
                   size={"2x"}
                   style={{ paddingTop: "10px", cursor: "pointer" }}
-                  icon={faPauseCircle}
+                  onClick={isPlaying ? pauser : player}
+                  icon={isPlaying ? faPauseCircle : faPlayCircle}
                 ></FontAwesomeIcon>
               </Flex0>
               <Flex1></Flex1>

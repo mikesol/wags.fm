@@ -13,7 +13,11 @@ import FRP.Event (Event, makeEvent)
 loopEmitter' :: Ref (Maybe TimeoutId) -> NonEmpty List Int -> (Unit -> Effect Unit) -> List Int -> Effect Unit
 loopEmitter' r l@(a :| b) push Nil = loopEmitter' r l push (a : b)
 loopEmitter' r l push (c : d) =
-  setTimeout c (loopEmitter' r l push d) >>= flip write r <<< pure
+  setTimeout c
+    ( do
+        push unit
+        loopEmitter' r l push d
+    ) >>= flip write r <<< pure
 
 loopEmitter :: NonEmpty List Int -> Event Unit
 loopEmitter l@(a :| b) = makeEvent \k -> do
