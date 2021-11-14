@@ -16,33 +16,33 @@ deckDeckGoHighlightElement();
 const codeVariants = {
   starting: () => {
     return {
-      x: "100%",
-      opacity:0
+      x: "200%",
+      opacity: 0,
     };
   },
   present: () => {
     return {
       x: 0,
-      opacity:1
+      opacity: 1,
     };
   },
   absent: () => {
     return {
-      x: "-100%",
-      opacity:0
+      opacity: 0,
+      x: "-200%",
     };
   },
 };
 
 const mainVariants = {
-  present: () => {
+  presentMain: () => {
     return {
       y: 0,
       opacity: 1,
       zIndex: 1,
     };
   },
-  absent: ({ page }) => {
+  absentMain: ({ page }) => {
     return {
       zIndex: 0,
       y: page === 1 ? -1000 : 0,
@@ -185,7 +185,7 @@ const Hello = () => {
     setTimeout(() => {
       setSnippet(n + 1);
       incrementSnippet()(n + 1);
-    }, 2000);
+    }, 4000);
   useEffect(() => {
     incrementSnippet()(snippet);
   }, []);
@@ -203,7 +203,7 @@ const Hello = () => {
         key={0}
         page={page}
         direction={direction}
-        variant={page === 0 ? "present" : "absent"}
+        variant={page === 0 ? "presentMain" : "absentMain"}
       >
         <Listener>
           <R3C3>
@@ -227,7 +227,7 @@ const Hello = () => {
         key={1}
         page={page}
         direction={direction}
-        variant={page === 1 ? "present" : "absent"}
+        variant={page === 1 ? "presentMain" : "absentMain"}
       >
         <Coder>
           <FlexC>
@@ -245,74 +245,85 @@ const Hello = () => {
               <FlexR>
                 <Flex1></Flex1>
                 <Flex1>
-                  <AnimatePresence>
-                    {snippet % 3 === 0 && (
-                      <motion.div
-                        key={"code0"}
-                        initial="starting"
-                        animate="present"
-                        exit="absent"
-                        variants={codeVariants}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <deckgo-highlight-code
-                          line-numbers={false}
-                          editable={true}
-                          language="haskell"
+                  <div
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  >
+                    <AnimatePresence>
+                      {snippet % 3 === 0 && (
+                        <motion.div
+                          key={"code0"}
+                          style={{ position: "absolute", width: "100%" }}
+                          initial="starting"
+                          animate="present"
+                          exit="absent"
+                          variants={codeVariants}
+                          transition={{ duration: 1.2 }}
                         >
-                          <code slot="code">
-                            {`module HelloWorld where
+                          <deckgo-highlight-code
+                            line-numbers={false}
+                            editable={true}
+                            language="haskell"
+                          >
+                            <code slot="code">
+                              {`module HelloWorld where
 
 a = 1 :: Int`}
-                          </code>
-                        </deckgo-highlight-code>
-                      </motion.div>
-                    )}
-                    {snippet % 3 === 1 && (
-                      <motion.div
-                        key={"code1"}
-                        initial="starting"
-                        animate="present"
-                        exit="absent"
-                        variants={codeVariants}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <deckgo-highlight-code
-                          line-numbers={false}
-                          editable={true}
-                          language="haskell"
+                            </code>
+                          </deckgo-highlight-code>
+                        </motion.div>
+                      )}
+                      {snippet % 3 === 1 && (
+                        <motion.div
+                          key={"code1"}
+                          style={{ position: "absolute", width: "100%" }}
+                          initial="starting"
+                          animate="present"
+                          exit="absent"
+                          variants={codeVariants}
+                          transition={{ duration: 1.2 }}
                         >
-                          <code slot="code">
-                            {`module HelloWorld where
+                          <deckgo-highlight-code
+                            line-numbers={false}
+                            editable={true}
+                            language="haskell"
+                          >
+                            <code slot="code">
+                              {`module HelloWorld where
 
 a = 2 :: Int`}
-                          </code>
-                        </deckgo-highlight-code>
-                      </motion.div>
-                    )}
-                    {snippet % 3 === 2 && (
-                      <motion.div
-                        key={"code2"}
-                        initial="starting"
-                        animate="present"
-                        exit="absent"
-                        variants={codeVariants}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <deckgo-highlight-code
-                          line-numbers={false}
-                          editable={true}
-                          language="haskell"
+                            </code>
+                          </deckgo-highlight-code>
+                        </motion.div>
+                      )}
+                      {snippet % 3 === 2 && (
+                        <motion.div
+                          key={"code2"}
+                          style={{ position: "absolute", width: "100%" }}
+                          initial="starting"
+                          animate="present"
+                          exit="absent"
+                          variants={codeVariants}
+                          transition={{ duration: 1.2 }}
                         >
-                          <code slot="code">
-                            {`module HelloWorld where
+                          <deckgo-highlight-code
+                            line-numbers={false}
+                            editable={true}
+                            language="haskell"
+                          >
+                            <code slot="code">
+                              {`module HelloWorld where
 
 a = 3 :: Int`}
-                          </code>
-                        </deckgo-highlight-code>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                            </code>
+                          </deckgo-highlight-code>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </Flex1>
                 <Flex1></Flex1>
               </FlexR>
