@@ -17,6 +17,11 @@ let additions =
         , repo = "https://github.com/csicar/purescript-typelevel-peano.git"
         , version = "v1.0.1"
         }
+      , jit =
+        { dependencies = [ "maybe" ]
+        , repo = "https://github.com/mikesol/purescript-jit.git"
+        , version = "v0.0.0"
+        }
       , event =
         { dependencies =
           [ "console"

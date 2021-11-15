@@ -10,17 +10,24 @@ import Effect.Ref (Ref, new, read, write)
 import Effect.Timer (TimeoutId, clearTimeout, setTimeout)
 import FRP.Event (Event, makeEvent)
 
-loopEmitter' :: Ref (Maybe TimeoutId) -> NonEmpty List Int -> (Unit -> Effect Unit) -> List Int -> Effect Unit
-loopEmitter' r l@(a :| b) push Nil = loopEmitter' r l push (a : b)
-loopEmitter' r l push (c : d) =
-  setTimeout c
+loopEmitter'
+  :: forall struct
+   . Ref (Maybe TimeoutId)
+  -> (struct -> Int)
+  -> NonEmpty List struct
+  -> (struct -> Effect Unit)
+  -> List struct
+  -> Effect Unit
+loopEmitter' r f l@(a :| b) push Nil = loopEmitter' r f l push (a : b)
+loopEmitter' r f l push (c : d) =
+  setTimeout (f c)
     ( do
-        push unit
-        loopEmitter' r l push d
+        push c
+        loopEmitter' r f l push d
     ) >>= flip write r <<< pure
 
-loopEmitter :: NonEmpty List Int -> Event Unit
-loopEmitter l@(a :| b) = makeEvent \k -> do
+loopEmitter :: forall struct. (struct -> Int) -> NonEmpty List struct -> Event struct
+loopEmitter f l@(a :| b) = makeEvent \k -> do
   ref <- new Nothing
-  loopEmitter' ref l k (a : b)
+  loopEmitter' ref f l k (a : b)
   pure (read ref >>= maybe (pure unit) clearTimeout)

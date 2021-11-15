@@ -30,6 +30,8 @@ to generate this file without the comments in this block.
   , "free"
   , "identity"
   , "integers"
+  , "jit"
+  , "js-timers"
   , "lists"
   , "math"
   , "maybe"

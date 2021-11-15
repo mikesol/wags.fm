@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { defineCustomElements as deckDeckGoHighlightElement } from "@deckdeckgo/highlight-code/dist/loader";
 import loadingImg from "../images/wags.fm.transparent.png";
-import { pause, play } from "../../output/WAGS.FM.Controller";
+import { pauseScroll, playScroll } from "../../output/WAGS.FM.Controller";
 
 deckDeckGoHighlightElement();
 
@@ -230,25 +230,25 @@ const Hello = () => {
   };
   // snippet
   const [snippet, setSnippet] = useState(0);
-  const [stopPlaying, setStopPlaying] = let_(
-    useState({ stopPlaying: () => {} })
-  )(([x, y]) => [x.stopPlaying, (stopPlaying) => y({ stopPlaying })]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const pauser = pause({
-    stopPlaying,
-    setIsPlaying: eff(setIsPlaying),
-    setStopPlaying: eff(setStopPlaying),
+  const [stopScrolling, setStopScrolling] = let_(
+    useState({ stopScrolling: () => {} })
+  )(([x, y]) => [x.stopScrolling, (stopScrolling) => y({ stopScrolling })]);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollPauser = pauseScroll({
+    stopScrolling,
+    setIsScrolling: eff(setIsScrolling),
+    setStopScrolling: eff(setStopScrolling),
   });
-  const player = play({
+  const scrollPlayer = playScroll({
     snippet,
-    setStopPlaying: eff(setStopPlaying),
+    setStopScrolling: eff(setStopScrolling),
     setSnippet: eff(setSnippet),
-    isPlaying,
-    setIsPlaying: eff(setIsPlaying),
+    isScrolling,
+    setIsScrolling: eff(setIsScrolling),
   });
-  // for testing purposes, launch player immediately
+  // for testing purposes, launch scrollPlayer immediately
   useEffect(() => {
-    player();
+    scrollPlayer();
   }, []);
   // loadingEffect
   const [loading, setLoading] = useState(true);
@@ -327,7 +327,7 @@ const Hello = () => {
                           transition={{ duration: 1.2 }}
                         >
                           <deckgo-highlight-code
-                            onClick={pauser}
+                            onClick={scrollPauser}
                             line-numbers={false}
                             editable={true}
                             language="haskell"
@@ -350,7 +350,7 @@ const Hello = () => {
                           transition={{ duration: 1.2 }}
                         >
                           <deckgo-highlight-code
-                            onClick={pauser}
+                            onClick={scrollPauser}
                             line-numbers={false}
                             editable={true}
                             language="haskell"
@@ -378,8 +378,8 @@ const Hello = () => {
                 <FontAwesomeIcon
                   size={"2x"}
                   style={{ paddingTop: "10px", cursor: "pointer" }}
-                  onClick={isPlaying ? pauser : player}
-                  icon={isPlaying ? faPauseCircle : faPlayCircle}
+                  onClick={isScrolling ? scrollPauser : scrollPlayer}
+                  icon={isScrolling ? faPauseCircle : faPlayCircle}
                 ></FontAwesomeIcon>
               </Flex0>
               <Flex1></Flex1>
