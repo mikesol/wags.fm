@@ -228,12 +228,21 @@ const Hello = () => {
   const paginate = (newDirection) => {
     setPage([bindPage(page + newDirection), newDirection]);
   };
-  // snippet
+  // START ENGINE
   const [snippet, setSnippet] = useState(0);
   const [stopScrolling, setStopScrolling] = let_(
     useState({ stopScrolling: () => {} })
   )(([x, y]) => [x.stopScrolling, (stopScrolling) => y({ stopScrolling })]);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [stopWags, setStopWags] = let_(
+    useState({ stopWags: () => {} })
+  )(([x, y]) => [x.stopWags, (stopWags) => y({ stopWags })]);
+  const [newWagPush, setNewWagPush] = let_(
+    useState({ newWagPush: () => () => {} })
+  )(([x, y]) => [x.newWagPush, (newWagPush) => y({ newWagPush })]);
+  // END ENGINE
+  // START FNs
   const scrollPauser = pauseScroll({
     stopScrolling,
     setIsScrolling: eff(setIsScrolling),
@@ -246,10 +255,6 @@ const Hello = () => {
     isScrolling,
     setIsScrolling: eff(setIsScrolling),
   });
-  // for testing purposes, launch scrollPlayer immediately
-  useEffect(() => {
-    scrollPlayer();
-  }, []);
   // loadingEffect
   const [loading, setLoading] = useState(true);
   useEffect(() => {

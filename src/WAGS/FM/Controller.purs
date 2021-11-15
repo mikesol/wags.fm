@@ -46,8 +46,8 @@ type SetStopScrolling = Effect Unit -> Effect Unit
 type StopWags = Effect Unit
 type SetStopWags = Effect Unit -> Effect Unit
 ----------
-type NewWagPush = { push :: AFuture -> Effect Unit }
-type SetNewWagPush = { push :: AFuture -> Effect Unit } -> Effect Unit
+type NewWagPush = AFuture -> Effect Unit
+type SetNewWagPush = (AFuture -> Effect Unit) -> Effect Unit
 
 type PauseScrollSig =
   { stopScrolling :: StopScrolling
@@ -144,7 +144,7 @@ playScroll
         let np = pg' + 1
         setSnippet np
         write np pg
-        newWagPush.push wag
+        newWagPush wag
       setIsScrolling true
       setStopScrolling stopScrolling
 
@@ -190,7 +190,7 @@ playWags
         , isScrolling: false
         , setIsScrolling
         , setStopScrolling
-        , newWagPush: { push }
+        , newWagPush: push
         , playlist
         }
 
