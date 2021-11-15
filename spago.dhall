@@ -13,6 +13,7 @@ to generate this file without the comments in this block.
 { name = "fp-sound"
 , dependencies =
   [ "aff"
+  , "aff-promise"
   , "affjax"
   , "argonaut-codecs"
   , "arrays"

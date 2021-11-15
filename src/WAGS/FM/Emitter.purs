@@ -19,12 +19,13 @@ loopEmitter'
   -> List struct
   -> Effect Unit
 loopEmitter' r f l@(a :| b) push Nil = loopEmitter' r f l push (a : b)
-loopEmitter' r f l push (c : d) =
-  setTimeout (f c)
-    ( do
-        push c
-        loopEmitter' r f l push d
-    ) >>= flip write r <<< pure
+loopEmitter' r f l push (c : d) = do
+  -- push `c` first, as this starts the section
+  push c
+  -- we set the timeout after
+  -- this is in a do-bloc to delay the bind, otherwise there'd be a stack explosion
+  -- in the calling of loopEmitter'
+  setTimeout (f c) (loopEmitter' r f l push d) >>= flip write r <<< pure
 
 loopEmitter :: forall struct. (struct -> Int) -> NonEmpty List struct -> Event struct
 loopEmitter f l@(a :| b) = makeEvent \k -> do

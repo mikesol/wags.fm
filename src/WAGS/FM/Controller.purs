@@ -2,18 +2,35 @@ module WAGS.FM.Controller where
 
 import Prelude
 
+import Control.Parallel (parTraverse)
+import Control.Promise (toAffE)
 import Data.Array.NonEmpty as NEA
-import Data.Foldable (for_)
+import Data.Either (Either(..))
+import Data.Foldable (fold, for_)
 import Data.Int (round)
 import Data.List (List)
 import Data.List as List
+import Data.Map as Map
 import Data.NonEmpty (NonEmpty, (:|))
+import Data.Tuple (snd)
+import Data.Tuple.Nested ((/\))
 import Effect (Effect)
+import Effect.Aff (launchAff_)
+import Effect.Class (liftEffect)
 import Effect.Ref (new, read, write)
-import FRP.Event (subscribe)
+import FRP.Behavior (Behavior, behavior)
+import FRP.Event (create, subscribe)
+import FRP.Event as Event
 import WAGS.FM.Emitter (loopEmitter)
 import WAGS.FM.Types (Playlist)
+import WAGS.Interpret (class AudioInterpret, close, constant0Hack, context, contextResume, contextState, decodeAudioDataFromUri, defaultFFIAudio, makeUnitCache)
+import WAGS.Interpret (constant0Hack, context, contextResume, contextState, makeUnitCache)
+import WAGS.Lib.Learn (FullSceneBuilder(..), easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)
+import WAGS.Lib.Tidal.Engine (engine)
+import WAGS.Lib.Tidal.Types (SampleCache)
+import WAGS.Lib.Tidal.Util (doDownloads, doDownloads')
+import WAGS.Run (run, Run)
 
 type Snippet = Int
 type SetSnippet = Int -> Effect Unit
@@ -69,15 +86,20 @@ type PlayScrollSig =
 
 type PlayWagsSig =
   { snippet :: Snippet
+  , stopScrolling :: StopScrolling
   , setStopScrolling :: SetStopScrolling
   , setSnippet :: SetSnippet
   , setIsScrolling :: SetIsScrolling
   , isPlaying :: IsPlaying
   , setIsPlaying :: SetIsPlaying
   , setStopWags :: SetStopWags
+  , bufferCache :: { read :: Effect SampleCache, write :: SampleCache -> Effect Unit }
   , playlist :: Playlist
   }
   -> Effect Unit
+
+readableToBehavior :: Effect ~> Behavior
+readableToBehavior r = behavior \e -> Event.makeEvent \f -> Event.subscribe e \v -> r >>= f <<< v
 
 stopWags :: StopWagsSig
 stopWags
@@ -115,6 +137,10 @@ playScroll
   for_ (map (al <<< NEA.toNonEmpty) (NEA.fromArray playlist)) \nea ->
     when (not isScrolling) do
       pg <- new snippet
+      THIS NEEDS TO BE ABSTRACTED OUT SO THAT A SINGLE LOOP EMITTER IS VALID FOR BOTH
+      CANNOT BE NESTED HERE
+      NEEDS GETTER AND SETTER!!!!!!!!!
+      SO SETNEWWAGPUSH ???
       stopScrolling <- subscribe (loopEmitter (_.duration >>> mul 1000.0 >>> round) $ nea) \{ wag } -> do
         pg' <- read pg
         let np = pg' + 1
@@ -123,3 +149,54 @@ playScroll
         newWagPush.push wag
       setIsScrolling true
       setStopScrolling stopScrolling
+
+playWags :: PlayWagsSig
+playWags
+  { snippet
+  , stopScrolling
+  , setStopScrolling
+  , setSnippet
+  , setIsScrolling
+  , isPlaying
+  , setIsPlaying
+  , bufferCache
+  , setStopWags
+  , playlist
+  } =
+  for_ (map (al <<< NEA.toNonEmpty) (NEA.fromArray playlist)) \nea ->
+    when (not isPlaying) do
+      -- we should never have to stop scrolling, but we do just
+      -- to make sure there was not an application error before
+      audioCtx <- context
+      waStatus <- liftEffect $ contextState audioCtx
+      -- void the constant 0 hack
+      -- this will result in a very slight performance decrease but makes iOS and Mac more sure
+      _ <- liftEffect $ constant0Hack audioCtx
+      unitCache <- liftEffect makeUnitCache
+      stopScrolling
+      -- then, we start the scroll
+      { event, push } <- create
+      setIsPlaying true
+      launchAff_ do
+        when (waStatus /= "running") (toAffE $ contextResume audioCtx)
+        fold <$> parTraverse (doDownloads' audioCtx bufferCache (pure $ pure unit) identity) (map _.wag playlist)
+        let FullSceneBuilder { triggerWorld, piece } = engine (pure unit) (map (const <<< const) event) $ (Left (readableToBehavior bufferCache.read))
+        trigger /\ world <- snd $ triggerWorld (audioCtx /\ (pure (pure {} /\ pure {})))
+        unsub <- liftEffect $ subscribe
+          (run trigger world { easingAlgorithm } (defaultFFIAudio audioCtx unitCache) piece)
+          (\(_ :: Run Unit ()) -> pure unit)
+        liftEffect $ setStopWags do
+          unsub
+          close audioCtx
+        liftEffect $ playScroll
+          { snippet
+          , setSnippet
+          , isScrolling: false
+          , setIsScrolling
+          , setStopScrolling
+          , newWagPush: { push }
+          , playlist
+          }
+
+initialSampleCache :: SampleCache
+initialSampleCache = Map.empty
