@@ -13,7 +13,13 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { defineCustomElements as deckDeckGoHighlightElement } from "@deckdeckgo/highlight-code/dist/loader";
 import loadingImg from "../images/wags.fm.transparent.png";
-import { pauseScroll, playScroll } from "../../output/WAGS.FM.Controller";
+import {
+  pauseScroll,
+  playScroll,
+  initialSampleCache,
+  playWags,
+  stopWags as swag,
+} from "../../output/WAGS.FM.Controller";
 
 deckDeckGoHighlightElement();
 
@@ -235,25 +241,54 @@ const Hello = () => {
   )(([x, y]) => [x.stopScrolling, (stopScrolling) => y({ stopScrolling })]);
   const [isScrolling, setIsScrolling] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [stopWags, setStopWags] = let_(
-    useState({ stopWags: () => {} })
-  )(([x, y]) => [x.stopWags, (stopWags) => y({ stopWags })]);
+  const [stopWags, setStopWags] = let_(useState({ stopWags: () => {} }))(
+    ([x, y]) => [x.stopWags, (stopWags) => y({ stopWags })]
+  );
   const [newWagPush, setNewWagPush] = let_(
     useState({ newWagPush: () => () => {} })
   )(([x, y]) => [x.newWagPush, (newWagPush) => y({ newWagPush })]);
+  const bufferCache = let_(useRef(initialSampleCache))((rf) => ({
+    read: () => rf.current,
+    write: (x) => () => {
+      rf.current = x;
+    },
+  }));
   // END ENGINE
   // START FNs
+  const playlist = [];
   const scrollPauser = pauseScroll({
     stopScrolling,
     setIsScrolling: eff(setIsScrolling),
     setStopScrolling: eff(setStopScrolling),
   });
+  const wagsStopper = swag({
+    stopScrolling,
+    setStopScrolling: eff(setStopScrolling),
+    setIsScrolling: eff(setIsScrolling),
+    setIsPlaying: eff(setIsPlaying),
+    stopWags,
+    setStopWags: eff(setStopWags),
+  });
   const scrollPlayer = playScroll({
+    playlist,
+    newWagPush,
     snippet,
     setStopScrolling: eff(setStopScrolling),
     setSnippet: eff(setSnippet),
     isScrolling,
     setIsScrolling: eff(setIsScrolling),
+  });
+  const wagsPlayer = playWags({
+    snippet,
+    stopScrolling,
+    setStopScrolling: eff(setStopScrolling),
+    setSnippet: eff(setSnippet),
+    setIsScrolling: eff(setIsScrolling),
+    isPlaying: isPlaying,
+    setIsPlaying: eff(setIsPlaying),
+    setStopWags: eff(setStopWags),
+    bufferCache,
+    playlist,
   });
   // loadingEffect
   const [loading, setLoading] = useState(true);
