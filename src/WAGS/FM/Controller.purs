@@ -24,10 +24,10 @@ import FRP.Event as Event
 import WAGS.FM.Emitter (loopEmitter)
 import WAGS.FM.Types (Playlist)
 import WAGS.Interpret (close, defaultFFIAudio, makeUnitCache, constant0Hack, context, contextResume, contextState)
-import WAGS.Lib.Learn (FullSceneBuilder(..), easingAlgorithm)
+import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Engine (engine)
-import WAGS.Lib.Tidal.Types (SampleCache)
+import WAGS.Lib.Tidal.Types (SampleCache, TidalRes)
 import WAGS.Lib.Tidal.Util (doDownloads')
 import WAGS.Run (run, Run)
 
@@ -88,6 +88,7 @@ type PlayWagsSig =
   , stopScrolling :: StopScrolling
   , setStopScrolling :: SetStopScrolling
   , setSnippet :: SetSnippet
+  , setNewWagPush :: SetNewWagPush
   , setIsScrolling :: SetIsScrolling
   , isPlaying :: IsPlaying
   , setIsPlaying :: SetIsPlaying
@@ -155,6 +156,7 @@ playWags
   , setStopScrolling
   , setSnippet
   , setIsScrolling
+  , setNewWagPush
   , isPlaying
   , setIsPlaying
   , bufferCache
@@ -162,6 +164,10 @@ playWags
   , playlist
   } =
   when (not isPlaying) do
+    -- set is playing immediately
+    -- note that we may want to pass a cancellation for the aff to avoid a race condition
+    -- where the turn-off functionality is not set yet
+    setIsPlaying true
     -- we should never have to stop scrolling, but we do just
     -- to make sure there was not an application error before
     audioCtx <- context
@@ -172,7 +178,6 @@ playWags
     unitCache <- liftEffect makeUnitCache
     stopScrolling
     { event, push } <- create
-    setIsPlaying true
     launchAff_ do
       when (waStatus /= "running") (toAffE $ contextResume audioCtx)
       fold <$> parTraverse (doDownloads' audioCtx bufferCache (pure $ pure unit) identity) (map _.wag playlist)
@@ -180,19 +185,21 @@ playWags
       trigger /\ world <- snd $ triggerWorld (audioCtx /\ (pure (pure {} /\ pure {})))
       unsub <- liftEffect $ subscribe
         (run trigger world { easingAlgorithm } (defaultFFIAudio audioCtx unitCache) piece)
-        (\(_ :: Run Unit ()) -> pure unit)
-      liftEffect $ setStopWags do
-        unsub
-        close audioCtx
-      liftEffect $ playScroll
-        { snippet
-        , setSnippet
-        , isScrolling: false
-        , setIsScrolling
-        , setStopScrolling
-        , newWagPush: push
-        , playlist
-        }
+        (\(_ :: Run TidalRes Analysers) -> pure unit)
+      liftEffect do
+        setNewWagPush push
+        setStopWags do
+          unsub
+          close audioCtx
+        playScroll
+          { snippet
+          , setSnippet
+          , isScrolling: false
+          , setIsScrolling
+          , setStopScrolling
+          , newWagPush: push
+          , playlist
+          }
 
 initialSampleCache :: SampleCache
 initialSampleCache = Map.empty

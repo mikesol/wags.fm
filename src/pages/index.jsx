@@ -3,14 +3,15 @@ import { styled } from "@stitches/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPauseCircle,
+  faStopCircle,
   faPlayCircle,
   faChevronCircleDown,
   faChevronCircleUp,
 } from "@fortawesome/free-solid-svg-icons";
-import { Scrollbars } from "react-custom-scrollbars";
 import img from "../images/circuits.jpg";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import simple from "../playlists/simple";
 import { defineCustomElements as deckDeckGoHighlightElement } from "@deckdeckgo/highlight-code/dist/loader";
 import loadingImg from "../images/wags.fm.transparent.png";
 import {
@@ -255,7 +256,7 @@ const Hello = () => {
   }));
   // END ENGINE
   // START FNs
-  const playlist = [];
+  const playlist = simple.playlist;
   const scrollPauser = pauseScroll({
     stopScrolling,
     setIsScrolling: eff(setIsScrolling),
@@ -281,6 +282,7 @@ const Hello = () => {
   const wagsPlayer = playWags({
     snippet,
     stopScrolling,
+    setNewWagPush: eff(setNewWagPush),
     setStopScrolling: eff(setStopScrolling),
     setSnippet: eff(setSnippet),
     setIsScrolling: eff(setIsScrolling),
@@ -312,7 +314,15 @@ const Hello = () => {
               <Flex1></Flex1>
               <Flex0>
                 <FlexR>
-                  <Flex1></Flex1>
+                  <Flex1>
+                    <IconCase onClick={() => paginate(1)}>
+                      <FontAwesomeIcon
+                        size={"2x"}
+                        onClick={isPlaying ? wagsStopper : wagsPlayer}
+                        icon={isPlaying ? faStopCircle : faPlayCircle}
+                      ></FontAwesomeIcon>
+                    </IconCase>
+                  </Flex1>
                   <Flex0>
                     <IconCase onClick={() => paginate(1)}>
                       Edit me <MyFA icon={faChevronCircleDown}></MyFA>
