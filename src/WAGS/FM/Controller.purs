@@ -34,6 +34,8 @@ import WAGS.Run (run, Run)
 type Snippet = Int
 type SetSnippet = Int -> Effect Unit
 ----------
+type SetCode = String -> Effect Unit
+----------
 type IsScrolling = Boolean
 type SetIsScrolling = Boolean -> Effect Unit
 ----------
@@ -72,6 +74,7 @@ type StopWagsSig =
 
 type PlayScrollSig =
   { snippet :: Snippet
+  , setCode :: SetCode
   , setStopScrolling :: SetStopScrolling
   , setSnippet :: SetSnippet
   , isScrolling :: IsScrolling
@@ -85,6 +88,7 @@ type PlayScrollSig =
 
 type PlayWagsSig =
   { snippet :: Snippet
+  , setCode :: SetCode
   , stopScrolling :: StopScrolling
   , setStopScrolling :: SetStopScrolling
   , setSnippet :: SetSnippet
@@ -135,15 +139,17 @@ playScroll
   , setIsScrolling
   , setStopScrolling
   , newWagPush
+  , setCode
   , playlist
   } =
   for_ (map (al <<< NEA.toNonEmpty) (NEA.fromArray playlist)) \nea ->
     when (not isScrolling) do
       pg <- new snippet
-      stopScrolling <- subscribe (loopEmitter (_.duration >>> mul 1000.0 >>> round) $ nea) \{ wag } -> do
+      stopScrolling <- subscribe (loopEmitter (_.duration >>> mul 1000.0 >>> round) $ nea) \{ wag, code } -> do
         pg' <- read pg
         let np = pg' + 1
         setSnippet np
+        setCode code
         write np pg
         newWagPush wag
       setIsScrolling true
@@ -160,6 +166,7 @@ playWags
   , isPlaying
   , setIsPlaying
   , bufferCache
+  , setCode
   , setStopWags
   , playlist
   } =
@@ -194,6 +201,7 @@ playWags
         playScroll
           { snippet
           , setSnippet
+          , setCode
           , isScrolling: false
           , setIsScrolling
           , setStopScrolling
