@@ -11,7 +11,7 @@ import {
 import img from "../images/circuits.jpg";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import simple from "../playlists/simple";
+import { playlist as simple } from "../playlists/simple";
 import { defineCustomElements as deckDeckGoHighlightElement } from "@deckdeckgo/highlight-code/dist/loader";
 import loadingImg from "../images/wags.fm.transparent.png";
 import {
@@ -152,6 +152,13 @@ const R3C3 = styled("div", {
   gridRowEnd: 3,
 });
 
+const R2C2 = styled("div", {
+  gridColumnStart: 2,
+  gridColumnEnd: 2,
+  gridRowStart: 2,
+  gridRowEnd: 2,
+});
+
 const FlexC = styled("div", {
   width: "100%",
   height: "100%",
@@ -256,7 +263,7 @@ const Hello = () => {
   }));
   // END ENGINE
   // START FNs
-  const playlist = simple.playlist;
+  const playlist = simple;
   const scrollPauser = pauseScroll({
     stopScrolling,
     setIsScrolling: eff(setIsScrolling),
@@ -309,20 +316,21 @@ const Hello = () => {
         variant={page === 0 ? "presentMain" : "absentMain"}
       >
         <Listener>
+          <R2C2>
+            {" "}
+            <IconCase onClick={isPlaying ? wagsStopper : wagsPlayer}>
+              <FontAwesomeIcon
+                size={"2x"}
+                icon={isPlaying ? faStopCircle : faPlayCircle}
+              ></FontAwesomeIcon>
+            </IconCase>
+          </R2C2>
           <R3C3>
             <FlexC>
               <Flex1></Flex1>
               <Flex0>
                 <FlexR>
-                  <Flex1>
-                    <IconCase onClick={() => paginate(1)}>
-                      <FontAwesomeIcon
-                        size={"2x"}
-                        onClick={isPlaying ? wagsStopper : wagsPlayer}
-                        icon={isPlaying ? faStopCircle : faPlayCircle}
-                      ></FontAwesomeIcon>
-                    </IconCase>
-                  </Flex1>
+                  <Flex1></Flex1>
                   <Flex0>
                     <IconCase onClick={() => paginate(1)}>
                       Edit me <MyFA icon={faChevronCircleDown}></MyFA>
