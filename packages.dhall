@@ -126,6 +126,37 @@ let additions =
         , repo = "https://github.com/mikesol/purescript-painting.git"
         , version = "v0.0.0"
         }
+      , framer-motion =
+        { dependencies =
+          [ "aff"
+  , "aff-promise"
+  , "arrays"
+  , "console"
+  , "effect"
+  , "foreign"
+  , "foreign-object"
+  , "heterogeneous"
+  , "literals"
+  , "maybe"
+  , "nullable"
+  , "prelude"
+  , "psci-support"
+  , "react-basic"
+  , "react-basic-dom"
+  , "react-basic-hooks"
+  , "record"
+  , "tuples"
+  , "two-or-more"
+  , "typelevel-prelude"
+  , "unsafe-coerce"
+  , "untagged-union"
+  , "web-dom"
+  , "web-events"
+  , "web-uievents"
+          ]
+        , repo = "https://github.com/i-am-the-slime/purescript-framer-motion.git"
+        , version = "v0.1.0"
+        }
       , convertable-options =
         { dependencies = [ "console", "effect", "maybe", "record" ]
         , repo =
