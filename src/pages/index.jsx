@@ -354,6 +354,7 @@ const Hello = () => {
 		setStopScrolling: eff(setStopScrolling),
 		setScrollIndex: eff(setScrollIndex),
 		isScrolling,
+		bufferCache,
 		setIsScrolling: eff(setIsScrolling),
 		ourFaultErrorCallback: handleError,
 		yourFaultErrorCallback: (errs) => () => setCurrentCompileError(`${errs}`),

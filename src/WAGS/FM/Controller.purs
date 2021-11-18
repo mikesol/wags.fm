@@ -37,9 +37,14 @@ import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Engine (engine)
 import WAGS.Lib.Tidal.Types (SampleCache, TidalRes)
-import WAGS.Lib.Tidal.Util (doDownloads, doDownloads')
+import WAGS.Lib.Tidal.Util (doDownloads')
 import WAGS.Run (run, Run)
 import WAGS.WebAPI (AudioContext)
+
+-----------
+-- Types --
+
+type BufferCache = { read :: Effect SampleCache, write :: SampleCache -> Effect Unit }
 
 ----------
 loaderUrl :: String
@@ -108,6 +113,7 @@ type PlayScrollSig =
   , setCurrentPlaylist :: SetPlaylist
   , compileOnPlay :: Boolean
   , code :: String
+  , bufferCache :: BufferCache
   , audioContext :: AudioContext
   , ourFaultErrorCallback :: Error -> Effect Unit
   , yourFaultErrorCallback :: Array API.CompilerError -> Effect Unit
@@ -126,9 +132,9 @@ type PlayWagsSig =
   , setIsScrolling :: SetIsScrolling
   , setAudioContext :: SetAudioContext
   , isPlaying :: IsPlaying
+  , bufferCache :: BufferCache
   , setIsPlaying :: SetIsPlaying
   , setStopWags :: SetStopWags
-  , bufferCache :: { read :: Effect SampleCache, write :: SampleCache -> Effect Unit }
   , currentPlaylist :: Playlist
   }
   -> Effect Unit
@@ -173,6 +179,7 @@ playScroll
   , newWagPush
   , audioContext
   , compileOnPlay
+  , bufferCache
   , ourFaultErrorCallback
   , yourFaultErrorCallback
   , code
@@ -206,7 +213,7 @@ playScroll
                     (_ { wag = wag, code = code })
                     nea'
                 launchAff_ do
-                  doDownloads audioContext ?hole mempty identity wag
+                  doDownloads' audioContext bufferCache mempty identity wag
                   liftEffect $ setCurrentPlaylist $ NEA.toArray newNea
             }
           mempty
@@ -286,6 +293,8 @@ playWags
           , yourFaultErrorCallback: mempty
           , setScrollIndex
           , setCode
+          , audioContext: audioCtx
+          , bufferCache
           , isScrolling: false
           , setIsScrolling
           , setStopScrolling
