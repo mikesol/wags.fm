@@ -301,7 +301,7 @@ const Hello = () => {
 		console.error(err);
 	};
 	// START ENGINE
-
+  const [audioContext, setAudioContext] = useState(() => new AudioContext());
 	const [currentPlaylistName, setCurrentPlaylistName] =
 		useState(WITH_LOVE_FROM_JAVA);
 	const [currentPlaylist, setCurrentPlaylist] = useState(simple);
@@ -345,6 +345,7 @@ const Hello = () => {
 		cleanErrorState: () => setCurrentCompileError(null),
 		currentPlaylist,
 		setCurrentPlaylist,
+		audioContext,
 		compileOnPlay: true,
 		newWagPush,
 		scrollIndex,
@@ -366,6 +367,7 @@ const Hello = () => {
 		setScrollIndex: eff(setScrollIndex),
 		setIsScrolling: eff(setIsScrolling),
 		isPlaying: isPlaying,
+		setAudioContext: eff(setAudioContext),
 		setIsPlaying: eff(setIsPlaying),
 		setStopWags: eff(setStopWags),
 		bufferCache,

@@ -37,8 +37,9 @@ import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Engine (engine)
 import WAGS.Lib.Tidal.Types (SampleCache, TidalRes)
-import WAGS.Lib.Tidal.Util (doDownloads')
+import WAGS.Lib.Tidal.Util (doDownloads, doDownloads')
 import WAGS.Run (run, Run)
+import WAGS.WebAPI (AudioContext)
 
 ----------
 loaderUrl :: String
@@ -48,7 +49,8 @@ compileUrl :: String
 compileUrl = "https://supvghemaw.eu-west-1.awsapprunner.com"
 
 ----------
-
+type SetAudioContext = AudioContext -> Effect Unit
+----------
 type Playlist = Array { code :: String, wag :: AFuture, duration :: Number }
 type SetPlaylist = Playlist -> Effect Unit
 ----------
@@ -106,6 +108,7 @@ type PlayScrollSig =
   , setCurrentPlaylist :: SetPlaylist
   , compileOnPlay :: Boolean
   , code :: String
+  , audioContext :: AudioContext
   , ourFaultErrorCallback :: Error -> Effect Unit
   , yourFaultErrorCallback :: Array API.CompilerError -> Effect Unit
   }
@@ -121,6 +124,7 @@ type PlayWagsSig =
   , setScrollIndex :: SetScrollIndex
   , setNewWagPush :: SetNewWagPush
   , setIsScrolling :: SetIsScrolling
+  , setAudioContext :: SetAudioContext
   , isPlaying :: IsPlaying
   , setIsPlaying :: SetIsPlaying
   , setStopWags :: SetStopWags
@@ -167,6 +171,7 @@ playScroll
   , setIsScrolling
   , setStopScrolling
   , newWagPush
+  , audioContext
   , compileOnPlay
   , ourFaultErrorCallback
   , yourFaultErrorCallback
@@ -200,7 +205,9 @@ playScroll
                   newNea = fromMaybe nea' $ NEA.modifyAt (scrollIndex `mod` NEA.length nea')
                     (_ { wag = wag, code = code })
                     nea'
-                setCurrentPlaylist $ NEA.toArray newNea
+                launchAff_ do
+                  doDownloads audioContext ?hole mempty identity wag
+                  liftEffect $ setCurrentPlaylist $ NEA.toArray newNea
             }
           mempty
       liftEffect do
@@ -231,6 +238,7 @@ playWags
   , setCode
   , setStopWags
   , currentPlaylist
+  , setAudioContext
   } =
   when (not isPlaying) do
     -- set is playing immediately
@@ -259,6 +267,7 @@ playWags
         (\(_ :: Run TidalRes Analysers) -> pure unit)
       liftEffect do
         setNewWagPush push
+        setAudioContext audioCtx
         setStopWags do
           unsub
           close audioCtx
