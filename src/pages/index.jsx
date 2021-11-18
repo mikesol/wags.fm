@@ -44,6 +44,24 @@ const editMeVariants = {
 		};
 	},
 };
+const errorScreenVariants = {
+	starting: () => {
+		return {
+			opacity: 0,
+		};
+	},
+	present: () => {
+		return {
+			opacity: 1,
+		};
+	},
+	absent: () => {
+		return {
+			opacity: 0,
+		};
+	},
+};
+
 const codeVariants = {
 	starting: () => {
 		return {
@@ -204,7 +222,7 @@ const WagsUL = styled("ul", {
 });
 const WagsNowPlaying = styled("h2", {
 	textAlign: "center",
-  padding: "5px",
+	padding: "5px",
 	backgroundColor: "rgba(255,255,255,0.7)",
 	fontSize: "1.5em",
 	fontWeight: "400",
@@ -276,16 +294,18 @@ const Hello = () => {
 		setPage([bindPage(page + newDirection), newDirection]);
 	};
 	const alert = useAlert();
-  const handleError = (err) => {
+	const handleError = (err) => () => {
 		alert.error("Something went wrong. Our fault 🤦 Check the console 🙏", {
 			timeout: 2000,
 		});
 		console.error(err);
 	};
-  // START ENGINE
+	// START ENGINE
 
-  const [currentPlaylistName, setCurrentPlaylistName] = useState(WITH_LOVE_FROM_JAVA);
+	const [currentPlaylistName, setCurrentPlaylistName] =
+		useState(WITH_LOVE_FROM_JAVA);
 	const [currentPlaylist, setCurrentPlaylist] = useState(simple);
+	const [currentCompileError, setCurrentCompileError] = useState(null);
 	const [code, setCode] = useState("");
 	const [scrollIndex, setScrollIndex] = useState(0);
 	const [stopScrolling, setStopScrolling] = let_(
@@ -322,6 +342,7 @@ const Hello = () => {
 		setStopWags: eff(setStopWags),
 	});
 	const scrollPlayer = playScroll({
+		cleanErrorState: () => setCurrentCompileError(null),
 		currentPlaylist,
 		setCurrentPlaylist,
 		compileOnPlay: true,
@@ -333,8 +354,8 @@ const Hello = () => {
 		setScrollIndex: eff(setScrollIndex),
 		isScrolling,
 		setIsScrolling: eff(setIsScrolling),
-		ourFaultErrorCallback: (e) => () => console.error(e),
-		yourFaultErrorCallback: (e) => () => console.error(e)
+		ourFaultErrorCallback: handleError,
+		yourFaultErrorCallback: (errs) => () => setCurrentCompileError(`${errs}`),
 	});
 	const wagsPlayer = playWags({
 		scrollIndex,
@@ -357,7 +378,7 @@ const Hello = () => {
 			setLoading(false);
 		}, 4000);
 	}, []);
-  const changePlaylist = setCurrentPlaylistName;
+	const changePlaylist = setCurrentPlaylistName;
 	return (
 		<>
 			<Motionable
@@ -505,7 +526,27 @@ const Hello = () => {
 										</AnimatePresence>
 									</div>
 								</Flex1>
-								<Flex1></Flex1>
+								<Flex1>
+									<AnimatePresence>
+										{currentCompileError !== null && (
+											<motion.div
+												animate='present'
+												initial='starting'
+												exit='absent'
+												variants={errorScreenVariants}
+											>
+												<deckgo-highlight-code
+													onClick={scrollPauser}
+													line-numbers={false}
+													editable={true}
+													language='bash'
+												>
+													<code slot='code'>{currentCompileError}</code>
+												</deckgo-highlight-code>
+											</motion.div>
+										)}
+									</AnimatePresence>
+								</Flex1>
 							</FlexR>
 						</Flex1>
 						<div

@@ -35,7 +35,6 @@ import WAGS.FM.Emitter (loopEmitter)
 import WAGS.Interpret (close, defaultFFIAudio, makeUnitCache, constant0Hack, context, contextResume, contextState)
 import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)
-import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Engine (engine)
 import WAGS.Lib.Tidal.Types (SampleCache, TidalRes)
 import WAGS.Lib.Tidal.Util (doDownloads')
@@ -47,6 +46,7 @@ loaderUrl = "https://purescript-wags.netlify.app/js/output"
 
 compileUrl :: String
 compileUrl = "https://supvghemaw.eu-west-1.awsapprunner.com"
+
 ----------
 
 type Playlist = Array { code :: String, wag :: AFuture, duration :: Number }
@@ -96,6 +96,7 @@ type StopWagsSig =
 type PlayScrollSig =
   { scrollIndex :: ScrollIndex
   , setCode :: SetCode
+  , cleanErrorState :: Effect Unit
   , setStopScrolling :: SetStopScrolling
   , setScrollIndex :: SetScrollIndex
   , isScrolling :: IsScrolling
@@ -160,6 +161,7 @@ al (a :| b) = a :| (List.fromFoldable b)
 playScroll :: PlayScrollSig
 playScroll
   { scrollIndex
+  , cleanErrorState
   , setScrollIndex
   , isScrolling
   , setIsScrolling
@@ -175,34 +177,41 @@ playScroll
   } =
   for_ (NEA.fromArray currentPlaylist) \nea' ->
     when (not isScrolling) $ launchAff_ do
-      nea <- map (al <<< NEA.toNonEmpty) $ if not compileOnPlay then pure nea' else makeAff \cb -> do
-          compile { code
+      liftEffect $ cleanErrorState
+      nea <- map (al <<< NEA.toNonEmpty) $
+        if not compileOnPlay then pure nea'
+        else makeAff \cb -> do
+          compile
+            { code
             , loaderUrl
             , compileUrl
             , ourFaultErrorCallback: \err -> do
-              ourFaultErrorCallback err
-              cb $ Left err
+                ourFaultErrorCallback err
+                cb $ Left err
             , yourFaultErrorCallback: \err -> do
-              yourFaultErrorCallback err
-              cb $ Left $ error $ JSON.writeJSON err
+                yourFaultErrorCallback err
+                cb $ Left $ error $ JSON.writeJSON err
             , successCallback: \{ js } -> do
                 wag' <- liftEffect $ evalSources js
                   >>= runExceptT <<< readProp "wag"
                   >>= either (throwError <<< error <<< show) pure
                 let wag = (unsafeCoerce :: Foreign -> AFuture) wag'
-                let newNea = fromMaybe nea'  $ NEA.modifyAt (scrollIndex `mod` NEA.length nea')
-                     (_ { wag = wag, code = code})  nea'
+                let
+                  newNea = fromMaybe nea' $ NEA.modifyAt (scrollIndex `mod` NEA.length nea')
+                    (_ { wag = wag, code = code })
+                    nea'
                 setCurrentPlaylist $ NEA.toArray newNea
             }
           mempty
       liftEffect do
         pg <- new scrollIndex
         stopScrolling <- subscribe
-          (loopEmitter (_.duration >>> mul 1000.0 >>> round) $ nea) \{ wag, code } -> do
+          (loopEmitter (_.duration >>> mul 1000.0 >>> round) $ nea)
+          \{ wag, code: upcomingCode } -> do
             pg' <- read pg
             let np = pg' + 1
             setScrollIndex np
-            setCode code
+            setCode upcomingCode
             write np pg
             newWagPush wag
         setIsScrolling true
@@ -262,6 +271,7 @@ playWags
           -- to-do, group all the no-ops so we don't have all of these monoids
           -- floating around. they should be under one "maybe"
           , code: mempty
+          , cleanErrorState: mempty
           , setCurrentPlaylist: mempty
           , ourFaultErrorCallback: mempty
           , yourFaultErrorCallback: mempty
