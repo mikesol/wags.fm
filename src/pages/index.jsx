@@ -1,5 +1,6 @@
 import React from "react";
 import { styled } from "@stitches/react";
+import { useAlert } from "react-alert";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
 	faPauseCircle,
@@ -259,15 +260,34 @@ const TK_NO = "tk?no";
 const MUITO_NATURAL = "isto é muito natural";
 const K_POP = "케이팝";
 
+const renameAsMain = (str) =>
+	str
+		.split(/\r?\n/)
+		.map((e) =>
+			e.indexOf("module ") !== -1 && e.indexOf(" where") !== -1
+				? "module Main where"
+				: e
+		)
+		.join("\n");
+
 const Hello = () => {
 	const [[page, direction], setPage] = useState([0, 0]);
 	const paginate = (newDirection) => {
 		setPage([bindPage(page + newDirection), newDirection]);
 	};
-	// START ENGINE
-  const [currentPlaylist, setCurrentPlaylist] = useState(WITH_LOVE_FROM_JAVA);
+	const alert = useAlert();
+  const handleError = (err) => {
+		alert.error("Something went wrong. Our fault 🤦 Check the console 🙏", {
+			timeout: 2000,
+		});
+		console.error(err);
+	};
+  // START ENGINE
+
+  const [currentPlaylistName, setCurrentPlaylistName] = useState(WITH_LOVE_FROM_JAVA);
+	const [currentPlaylist, setCurrentPlaylist] = useState(simple);
 	const [code, setCode] = useState("");
-	const [snippet, setSnippet] = useState(0);
+	const [scrollIndex, setScrollIndex] = useState(0);
 	const [stopScrolling, setStopScrolling] = let_(
 		useState({ stopScrolling: () => {} })
 	)(([x, y]) => [x.stopScrolling, (stopScrolling) => y({ stopScrolling })]);
@@ -288,7 +308,6 @@ const Hello = () => {
 	console.log(isPlaying, "isPlaying");
 	// END ENGINE
 	// START FNs
-	const playlist = simple;
 	const scrollPauser = pauseScroll({
 		stopScrolling,
 		setIsScrolling: eff(setIsScrolling),
@@ -303,28 +322,33 @@ const Hello = () => {
 		setStopWags: eff(setStopWags),
 	});
 	const scrollPlayer = playScroll({
-		playlist,
+		currentPlaylist,
+		setCurrentPlaylist,
+		compileOnPlay: true,
 		newWagPush,
-		snippet,
+		scrollIndex,
 		setCode: eff(setCode),
+		code,
 		setStopScrolling: eff(setStopScrolling),
-		setSnippet: eff(setSnippet),
+		setScrollIndex: eff(setScrollIndex),
 		isScrolling,
 		setIsScrolling: eff(setIsScrolling),
+		ourFaultErrorCallback: (e) => () => console.error(e),
+		yourFaultErrorCallback: (e) => () => console.error(e)
 	});
 	const wagsPlayer = playWags({
-		snippet,
+		scrollIndex,
 		stopScrolling,
 		setNewWagPush: eff(setNewWagPush),
 		setCode: eff(setCode),
 		setStopScrolling: eff(setStopScrolling),
-		setSnippet: eff(setSnippet),
+		setScrollIndex: eff(setScrollIndex),
 		setIsScrolling: eff(setIsScrolling),
 		isPlaying: isPlaying,
 		setIsPlaying: eff(setIsPlaying),
 		setStopWags: eff(setStopWags),
 		bufferCache,
-		playlist,
+		currentPlaylist,
 	});
 	// loadingEffect
 	const [loading, setLoading] = useState(true);
@@ -333,7 +357,7 @@ const Hello = () => {
 			setLoading(false);
 		}, 4000);
 	}, []);
-  const changePlaylist = setCurrentPlaylist;
+  const changePlaylist = setCurrentPlaylistName;
 	return (
 		<>
 			<Motionable
@@ -387,7 +411,7 @@ const Hello = () => {
 												icon={isPlaying ? faStopCircle : faPlayCircle}
 											></FontAwesomeIcon>
 										</IconCase>
-										<WagsNowPlaying>{currentPlaylist}</WagsNowPlaying>
+										<WagsNowPlaying>{currentPlaylistName}</WagsNowPlaying>
 									</Flex0>
 									<Flex1></Flex1>
 								</FlexR>
@@ -461,7 +485,7 @@ const Hello = () => {
 									>
 										<AnimatePresence>
 											<motion.div
-												key={"code" + snippet}
+												key={"code" + scrollIndex}
 												style={{ position: "absolute", width: "100%" }}
 												initial='starting'
 												animate='present'

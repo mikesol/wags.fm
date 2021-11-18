@@ -1,36 +1,23 @@
 import React from "react";
-import { globalCss } from "@stitches/react";
+import { transitions, positions, Provider as AlertProvider } from "react-alert";
+import AlertTemplate from "react-alert-template-basic";
 import { Helmet } from "react-helmet";
-import Toplevel from "./toplevel";
 
-const globalStyles = globalCss({
-  html: {
-    height: "100%",
-    margin: 0,
-    padding: 0,
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;',
-  },
-  body: { height: "100%", margin: 0, padding: 0, overflow: "hidden" },
-  "#___gatsby": { height: "100%" },
-  "#gatsby-focus-wrapper": { height: "100%" },
-  "::-webkit-scrollbar": {
-    display: "none"
-  },
-});
+const options = {
+  position: positions.BOTTOM_CENTER,
+  timeout: 5000,
+  offset: "30px",
+  transition: transitions.SCALE,
+};
 
 export default function Layout({ children }) {
-  globalStyles();
   return (
-    <Toplevel>
+    <div className="application">
       <Helmet>
         <meta charSet="utf-8" />
-        <title>wags.fm</title>
-        <link rel="canonical" href="https://wags.fm" />
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-PTMVJD534Q"
-        ></script>
+        <title>Soundly functional</title>
+        <link rel="canonical" href="http://mikesol.github.io/fp-sound" />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-GZRNEZ67E8"></script>
         <script>
           {`window.dataLayer = window.dataLayer || []
           function gtag(){window.dataLayer.push(arguments)}
@@ -38,7 +25,9 @@ export default function Layout({ children }) {
           gtag('config', 'G-PTMVJD534Q');`}
         </script>
       </Helmet>
-      {children}
-    </Toplevel>
+      <AlertProvider template={AlertTemplate} {...options}>
+        {children}
+      </AlertProvider>
+    </div>
   );
 }

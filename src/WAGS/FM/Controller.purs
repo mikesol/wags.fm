@@ -2,37 +2,58 @@ module WAGS.FM.Controller where
 
 import Prelude
 
+import Control.Monad.Except (runExceptT, throwError)
 import Control.Parallel (parTraverse)
 import Control.Promise (toAffE)
 import Data.Array.NonEmpty as NEA
-import Data.Either (Either(..))
+import Data.Either (Either(..), either)
 import Data.Foldable (fold, for_)
 import Data.Int (round)
 import Data.List (List)
 import Data.List as List
 import Data.Map as Map
+import Data.Maybe (fromMaybe)
 import Data.NonEmpty (NonEmpty, (:|))
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Effect.Aff (launchAff_)
+import Effect.Aff (error, launchAff_, makeAff)
 import Effect.Class (liftEffect)
+import Effect.Exception (Error)
 import Effect.Ref (new, read, write)
 import FRP.Behavior (Behavior, behavior)
 import FRP.Event (create, subscribe)
 import FRP.Event as Event
+import Foreign (Foreign)
+import Foreign.Index (readProp)
+import JIT.API as API
+import JIT.Compile (compile)
+import JIT.EvalSources (evalSources)
+import Simple.JSON as JSON
+import Unsafe.Coerce (unsafeCoerce)
 import WAGS.FM.Emitter (loopEmitter)
-import WAGS.FM.Types (Playlist)
 import WAGS.Interpret (close, defaultFFIAudio, makeUnitCache, constant0Hack, context, contextResume, contextState)
 import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
+import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Engine (engine)
 import WAGS.Lib.Tidal.Types (SampleCache, TidalRes)
 import WAGS.Lib.Tidal.Util (doDownloads')
 import WAGS.Run (run, Run)
 
-type Snippet = Int
-type SetSnippet = Int -> Effect Unit
+----------
+loaderUrl :: String
+loaderUrl = "https://purescript-wags.netlify.app/js/output"
+
+compileUrl :: String
+compileUrl = "https://supvghemaw.eu-west-1.awsapprunner.com"
+----------
+
+type Playlist = Array { code :: String, wag :: AFuture, duration :: Number }
+type SetPlaylist = Playlist -> Effect Unit
+----------
+type ScrollIndex = Int
+type SetScrollIndex = Int -> Effect Unit
 ----------
 type SetCode = String -> Effect Unit
 ----------
@@ -73,32 +94,37 @@ type StopWagsSig =
 ---
 
 type PlayScrollSig =
-  { snippet :: Snippet
+  { scrollIndex :: ScrollIndex
   , setCode :: SetCode
   , setStopScrolling :: SetStopScrolling
-  , setSnippet :: SetSnippet
+  , setScrollIndex :: SetScrollIndex
   , isScrolling :: IsScrolling
   , setIsScrolling :: SetIsScrolling
   , newWagPush :: NewWagPush
-  , playlist :: Playlist
+  , currentPlaylist :: Playlist
+  , setCurrentPlaylist :: SetPlaylist
+  , compileOnPlay :: Boolean
+  , code :: String
+  , ourFaultErrorCallback :: Error -> Effect Unit
+  , yourFaultErrorCallback :: Array API.CompilerError -> Effect Unit
   }
   -> Effect Unit
 
 ---
 
 type PlayWagsSig =
-  { snippet :: Snippet
+  { scrollIndex :: ScrollIndex
   , setCode :: SetCode
   , stopScrolling :: StopScrolling
   , setStopScrolling :: SetStopScrolling
-  , setSnippet :: SetSnippet
+  , setScrollIndex :: SetScrollIndex
   , setNewWagPush :: SetNewWagPush
   , setIsScrolling :: SetIsScrolling
   , isPlaying :: IsPlaying
   , setIsPlaying :: SetIsPlaying
   , setStopWags :: SetStopWags
   , bufferCache :: { read :: Effect SampleCache, write :: SampleCache -> Effect Unit }
-  , playlist :: Playlist
+  , currentPlaylist :: Playlist
   }
   -> Effect Unit
 
@@ -133,34 +159,61 @@ al (a :| b) = a :| (List.fromFoldable b)
 
 playScroll :: PlayScrollSig
 playScroll
-  { snippet
-  , setSnippet
+  { scrollIndex
+  , setScrollIndex
   , isScrolling
   , setIsScrolling
   , setStopScrolling
   , newWagPush
+  , compileOnPlay
+  , ourFaultErrorCallback
+  , yourFaultErrorCallback
+  , code
   , setCode
-  , playlist
+  , currentPlaylist
+  , setCurrentPlaylist
   } =
-  for_ (map (al <<< NEA.toNonEmpty) (NEA.fromArray playlist)) \nea ->
-    when (not isScrolling) do
-      pg <- new snippet
-      stopScrolling <- subscribe (loopEmitter (_.duration >>> mul 1000.0 >>> round) $ nea) \{ wag, code } -> do
-        pg' <- read pg
-        let np = pg' + 1
-        setSnippet np
-        setCode code
-        write np pg
-        newWagPush wag
-      setIsScrolling true
-      setStopScrolling stopScrolling
+  for_ (NEA.fromArray currentPlaylist) \nea' ->
+    when (not isScrolling) $ launchAff_ do
+      nea <- map (al <<< NEA.toNonEmpty) $ if not compileOnPlay then pure nea' else makeAff \cb -> do
+          compile { code
+            , loaderUrl
+            , compileUrl
+            , ourFaultErrorCallback: \err -> do
+              ourFaultErrorCallback err
+              cb $ Left err
+            , yourFaultErrorCallback: \err -> do
+              yourFaultErrorCallback err
+              cb $ Left $ error $ JSON.writeJSON err
+            , successCallback: \{ js } -> do
+                wag' <- liftEffect $ evalSources js
+                  >>= runExceptT <<< readProp "wag"
+                  >>= either (throwError <<< error <<< show) pure
+                let wag = (unsafeCoerce :: Foreign -> AFuture) wag'
+                let newNea = fromMaybe nea'  $ NEA.modifyAt (scrollIndex `mod` NEA.length nea')
+                     (_ { wag = wag, code = code})  nea'
+                setCurrentPlaylist $ NEA.toArray newNea
+            }
+          mempty
+      liftEffect do
+        pg <- new scrollIndex
+        stopScrolling <- subscribe
+          (loopEmitter (_.duration >>> mul 1000.0 >>> round) $ nea) \{ wag, code } -> do
+            pg' <- read pg
+            let np = pg' + 1
+            setScrollIndex np
+            setCode code
+            write np pg
+            newWagPush wag
+        setIsScrolling true
+        setStopScrolling stopScrolling
 
 playWags :: PlayWagsSig
 playWags
-  { snippet
+  { scrollIndex
   , stopScrolling
   , setStopScrolling
-  , setSnippet
+  , setScrollIndex
   , setIsScrolling
   , setNewWagPush
   , isPlaying
@@ -168,7 +221,7 @@ playWags
   , bufferCache
   , setCode
   , setStopWags
-  , playlist
+  , currentPlaylist
   } =
   when (not isPlaying) do
     -- set is playing immediately
@@ -187,7 +240,9 @@ playWags
     { event, push } <- create
     launchAff_ do
       when (waStatus /= "running") (toAffE $ contextResume audioCtx)
-      fold <$> parTraverse (doDownloads' audioCtx bufferCache (pure $ pure unit) identity) (map _.wag playlist)
+      map fold $ parTraverse
+        (doDownloads' audioCtx bufferCache (pure $ pure unit) identity)
+        (map _.wag currentPlaylist)
       let FullSceneBuilder { triggerWorld, piece } = engine (pure unit) (map (const <<< const) event) $ (Left (readableToBehavior bufferCache.read))
       trigger /\ world <- snd $ triggerWorld (audioCtx /\ (pure (pure {} /\ pure {})))
       unsub <- liftEffect $ subscribe
@@ -199,14 +254,24 @@ playWags
           unsub
           close audioCtx
         playScroll
-          { snippet
-          , setSnippet
+          { scrollIndex
+          -- no compile as we are restarting
+          , compileOnPlay: false
+          -- all of the memptys are a no-op as there is no compile step
+          -- code is a no-op as there is no compile step
+          -- to-do, group all the no-ops so we don't have all of these monoids
+          -- floating around. they should be under one "maybe"
+          , code: mempty
+          , setCurrentPlaylist: mempty
+          , ourFaultErrorCallback: mempty
+          , yourFaultErrorCallback: mempty
+          , setScrollIndex
           , setCode
           , isScrolling: false
           , setIsScrolling
           , setStopScrolling
           , newWagPush: push
-          , playlist
+          , currentPlaylist
           }
 
 initialSampleCache :: SampleCache

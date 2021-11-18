@@ -37,6 +37,7 @@
     "gatsby-transformer-sharp": "^4.0.0",
     "netlify-cms-app": "^2.15.55",
     "react": "^17.0.1",
+    "react-alert": "^7.0.3",
     "react-alert-template-basic": "^1.0.2",
     "react-charts": "^2.0.0-beta.7",
     "react-custom-scrollbars": "^4.2.1",
@@ -47,7 +48,7 @@
   "devDependencies": {
     "prettier": "^2.4.1",
     "purescript": "^0.14.5",
-    "spago": "^0.20.3",
-    "purs-tidy": "^0.6.2"
+    "purs-tidy": "^0.6.2",
+    "spago": "^0.20.3"
   }
 }
