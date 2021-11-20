@@ -42,6 +42,7 @@
   , "refs"
   , "simple-json"
   , "sized-vectors"
+  , "svg-parser-halogen"
   , "transformers"
   , "tuples"
   , "typelevel"

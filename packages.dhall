@@ -21,6 +21,13 @@ let additions =
         { dependencies = [ "affjax" ]
         , repo = "https://github.com/mikesol/purescript-jit.git"
         , version = "v0.0.0"
+        }, svg-parser = {
+          repo = "https://github.com/rnons/purescript-svg-parser.git", version = "v2.0.0"
+          , dependencies=[ "string-parsers"]
+        }
+       , svg-parser-halogen = {
+          repo = "https://github.com/rnons/purescript-svg-parser-halogen.git", version = "v2.0.0"
+          , dependencies=[ "halogen" , "svg-parser"]
         }
       , event =
         { dependencies =

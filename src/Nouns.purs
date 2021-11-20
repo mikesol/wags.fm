@@ -1,6 +1,5 @@
 module Nouns where
 
-import Prelude
 import Data.List.Types (NonEmptyList)
 import Data.Time.Duration (Milliseconds)
 import WAGS.Lib.Tidal (AFuture)
