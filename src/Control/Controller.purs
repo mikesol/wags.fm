@@ -1,4 +1,4 @@
-module WAGS.FM.Controller where
+module Control.Controller where
 
 import Prelude
 
@@ -31,7 +31,7 @@ import JIT.Compile (compile)
 import JIT.EvalSources (evalSources)
 import Simple.JSON as JSON
 import Unsafe.Coerce (unsafeCoerce)
-import WAGS.FM.Emitter (loopEmitter)
+import Control.Emitter (loopEmitter)
 import WAGS.Interpret (close, defaultFFIAudio, makeUnitCache, constant0Hack, context, contextResume, contextState)
 import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)

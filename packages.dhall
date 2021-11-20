@@ -18,7 +18,7 @@ let additions =
         , version = "v1.0.1"
         }
       , jit =
-        { dependencies = [ "maybe" ]
+        { dependencies = [ "affjax" ]
         , repo = "https://github.com/mikesol/purescript-jit.git"
         , version = "v0.0.0"
         }

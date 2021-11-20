@@ -1,4 +1,4 @@
-module WAGS.FM.Playlists.Simple.Simple2 where
+module Playlists.Java.Java2 where
 
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Tidal (make, s)

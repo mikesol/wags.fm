@@ -1,3 +1,0 @@
-# wags.fm
-
-Streaming radio.

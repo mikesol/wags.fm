@@ -1,44 +1,36 @@
-{-
-Welcome to a Spago project!
-You can edit this file as you like.
-
-Need help? See the following resources:
-- Spago documentation: https://github.com/purescript/spago
-- Dhall language tour: https://docs.dhall-lang.org/tutorials/Language-Tour.html
-
-When creating a new Spago project, you can use
-`spago init --no-comments` or `spago init -C`
-to generate this file without the comments in this block.
--}
-{ name = "fp-sound"
+{ name = "wags.fm"
 , dependencies =
   [ "aff"
   , "aff-promise"
-  , "affjax"
-  , "argonaut-codecs"
   , "arrays"
   , "behaviors"
   , "bifunctors"
+  , "console"
   , "control"
-  , "distributive"
+  , "css"
+  , "datetime"
+  , "dom-indexed"
   , "effect"
   , "either"
   , "event"
   , "exceptions"
+  , "filterable"
   , "foldable-traversable"
   , "foreign"
   , "foreign-object"
   , "free"
-  , "identity"
+  , "halogen"
+  , "halogen-css"
+  , "halogen-subscriptions"
   , "integers"
   , "jit"
   , "js-timers"
+  , "lcg"
   , "lists"
   , "math"
   , "maybe"
   , "newtype"
   , "nonempty"
-  , "nullable"
   , "ordered-collections"
   , "parallel"
   , "prelude"
@@ -46,15 +38,19 @@ to generate this file without the comments in this block.
   , "profunctor-lenses"
   , "psci-support"
   , "quickcheck"
+  , "random"
   , "refs"
   , "simple-json"
-  , "strings"
+  , "sized-vectors"
   , "transformers"
   , "tuples"
-  , "unfoldable"
+  , "typelevel"
+  , "typelevel-prelude"
   , "unsafe-coerce"
+  , "variant"
   , "wags"
   , "wags-lib"
+  , "web-html"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]

@@ -1,4 +1,4 @@
-module WAGS.FM.Emitter where
+module Control.Emitter where
 
 import Prelude
 
