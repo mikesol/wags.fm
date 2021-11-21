@@ -4,27 +4,32 @@ import Data.List (List(..), (:))
 import Data.List.NonEmpty as NEL
 import Data.NonEmpty ((:|))
 import Data.Time.Duration (Milliseconds(..))
-import Nouns as N
+import Types as T
 import Playlists.LoFi.LoFi0 as LoFi0
 import Playlists.LoFi.LoFi1 as LoFi1
 import Playlists.LoFi.LoFi2 as LoFi2
 
-dummyCode = "module Foo where" :: String
+foreign import loFi0Code :: String
+foreign import loFi1Code :: String
+foreign import loFi2Code :: String
 
-playlist :: N.Playlist
+playlist :: T.Playlist
 playlist =
   { title: "sweet & lo-fi"
   , sequence: NEL.NonEmptyList
       ( { duration: Milliseconds 4000.0
-        , code: dummyCode
+        , code: loFi0Code
         , wag: LoFi0.wag
-        } :| { duration: Milliseconds 4000.0
-        , code: dummyCode, wag: LoFi1.wag }
-          :
-            { duration: Milliseconds 4000.0
-            , code: dummyCode
-            , wag: LoFi2.wag
-            }
-          : Nil
+        } :|
+          { duration: Milliseconds 4000.0
+          , code: loFi1Code
+          , wag: LoFi1.wag
+          }
+            :
+              { duration: Milliseconds 4000.0
+              , code: loFi2Code
+              , wag: LoFi2.wag
+              }
+            : Nil
       )
   }

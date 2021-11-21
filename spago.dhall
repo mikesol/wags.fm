@@ -30,6 +30,7 @@
   , "math"
   , "maybe"
   , "newtype"
+  , "nonbili-dom"
   , "nonempty"
   , "ordered-collections"
   , "parallel"

@@ -23,6 +23,11 @@ let additions =
         , repo = "https://github.com/mikesol/purescript-jit.git"
         , version = "v0.0.0"
         }
+      , nonbili-dom =
+        { repo = "https://github.com/nonbili/purescript-nonbili-dom.git"
+        , dependencies = [ "web-html", "effect" ]
+        , version = "v0.2.0"
+        }
       , svg-parser =
         { repo = "https://github.com/rnons/purescript-svg-parser.git"
         , version = "v2.0.0"

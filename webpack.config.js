@@ -33,7 +33,7 @@ module.exports = {
 				type: "asset/resource",
 			},
 			{
-				test: /(Example|Wagged)\.purs/,
+				test: /\.purs$/i,
 				include: path.resolve(__dirname, "src"),
 				type: "asset/source",
 			},

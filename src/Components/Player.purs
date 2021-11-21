@@ -13,13 +13,12 @@ import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.CSS as CSS
 import Halogen.HTML.Events as HE
-import Nouns as N
 import Playlists as Playlists
 import SVGIcons as SVGIcons
 import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
 import Util (classes)
-import Verbs as V
+import Types as T
 
 type State = {}
 
@@ -32,8 +31,8 @@ foreign import background :: String
 
 choosePlaylist
   :: forall r
-   . N.Playlist
-  -> Variant (choosePlaylist :: N.Playlist | r)
+   . T.Playlist
+  -> Variant (choosePlaylist :: T.Playlist | r)
 choosePlaylist = inj (Proxy :: _ "choosePlaylist")
 
 pressPlay
@@ -51,7 +50,7 @@ pressStop
    . Variant (pressStop :: Unit | r)
 pressStop = inj (Proxy :: _ "pressStop") unit
 
-component :: forall q m. MonadEffect m => H.Component q N.PlayerInput V.PlayerOutput m
+component :: forall q m. MonadEffect m => H.Component q T.PlayerInput T.PlayerOutput m
 component =
   H.mkComponent
     { initialState
@@ -208,8 +207,8 @@ component =
       ]
 
   handleAction
-    :: V.PlayerAction
-    -> HalogenM N.PlayerState V.PlayerAction () V.PlayerOutput m Unit
+    :: T.PlayerAction
+    -> HalogenM T.PlayerState T.PlayerAction () T.PlayerOutput m Unit
   handleAction = match
     { pressPlay: const $ do
         H.raise pressPlay

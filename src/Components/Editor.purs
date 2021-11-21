@@ -2,43 +2,101 @@ module Components.Editor where
 
 import Prelude
 
-import CSS (left, px)
+import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, iterationCount, left, normalAnimationDirection, pct, sec)
 import DOM.HTML.Indexed as I
+import Data.Foldable (for_, traverse_)
 import Data.Variant (Variant, inj, match)
+import Effect.Class (class MonadEffect)
 import Halogen (HalogenM)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.CSS as CSS
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Nouns as N
+import Nonbili.DOM (innerText)
 import SVGIcons as SVGIcons
 import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
-import Util (classes)
-import Verbs as V
+import Types as T
+import Util (classes, nelmod)
 
 showPlayer
   :: forall r
    . Variant (showPlayer :: Unit | r)
 showPlayer = inj (Proxy :: _ "showPlayer") unit
 
-pressPlay
-  :: forall r
-   . Variant (pressPlay :: Unit | r)
-pressPlay = inj (Proxy :: _ "pressPlay") unit
+resumeScroll
+  :: forall r. Variant (resumeScroll :: Unit | r)
+resumeScroll = inj (Proxy :: _ "resumeScroll") unit
 
-pressPause
+playScroll
   :: forall r
-   . Variant (pressPause :: Unit | r)
-pressPause = inj (Proxy :: _ "pressPause") unit
+   . String
+  -> Variant (playScroll :: String | r)
+playScroll = inj (Proxy :: _ "playScroll")
+
+pauseScroll
+  :: forall r
+   . Variant (pauseScroll :: Unit | r)
+pauseScroll = inj (Proxy :: _ "pauseScroll") unit
 
 hilightCode :: forall w i. HH.Node (I.Interactive ()) w i
 hilightCode = HH.element (HH.ElemName "deckgo-highlight-code")
 
 editorClasses = [ "absolute", "w-full" ] :: Array String
 
-component :: forall q m. H.Component q N.EditorInput V.EditorOutput m
+flyIn :: CSS
+flyIn = animation
+  (fromString "flyIn")
+  (sec 0.6)
+  EaseInOut
+  (sec 0.0)
+  (iterationCount 1.0)
+  normalAnimationDirection
+  forwards
+
+flyOut :: CSS
+flyOut = animation
+  (fromString "flyIn")
+  (sec 0.6)
+  EaseInOut
+  (sec 0.0)
+  (iterationCount 1.0)
+  normalAnimationDirection
+  forwards
+
+shuffle :: CSS
+shuffle = left (pct 200.0)
+
+panic :: CSS
+panic = display displayNone
+
+{-
+0 0 -> 0
+0 1 -> 0
+0 2 -> 0
+0 3 -> 4
+0 4 -> 4
+0 5 -> 4
+0 6 -> 4
+0 7 -> 8
+0 (((n+1) / 4) * 4) - 0
+1 0 -> -1
+1 1 -> -1
+1 2 -> 3
+1 3 -> 3
+1 4 -> 3
+1 5 -> 3
+1 6 -> 7
+1 7 -> 7
+1 (((n+2) / 4) * 4) - 1
+2 0 -> -2
+2 1 -> 2
+2 2 -> 2
+2 (((n+3) / 4) * 4) - 2
+-}
+
+component :: forall q m. MonadEffect m => H.Component q T.EditorInput T.EditorOutput m
 component =
   H.mkComponent
     { initialState
@@ -56,7 +114,7 @@ component =
     , isScrolling
     }
 
-  render { isScrolling } =
+  render i@{ isScrolling } =
     HH.div
       [ classes
           [ "w-full"
@@ -100,28 +158,10 @@ component =
               ]
           ]
           [ HH.div [ classes [ "relative", "flex-grow" ] ]
-              [ HH.div
-                  [ classes editorClasses
-                  , CSS.style do
-                      left (px (-200.0))
-                  ]
-                  [ hilightCode
-                      [ HP.attr (H.AttrName "language") "haskell"
-                      ]
-                      [ HH.code [ HP.attr (H.AttrName "slot") "code" ] [ HH.text "module foo where" ]
-                      ]
-                  ]
-              , HH.div
-                  [ classes editorClasses
-                  , CSS.style do
-                      left (px (200.0))
-                  ]
-                  [ hilightCode
-                      [ HP.attr (H.AttrName "language") "haskell"
-                      ]
-                      [ HH.code [ HP.attr (H.AttrName "slot") "code" ] [ HH.text "module foo where" ]
-                      ]
-                  ]
+              [ someCode 0
+              , someCode 1
+              , someCode 2
+              , someCode 3
               ]
           , HH.div [ classes [ "flex-grow-0", "flex", "flex-row" ] ]
               [ HH.div [ classes [ "flex-grow" ] ] []
@@ -134,17 +174,43 @@ component =
                         ) 50 50
                       )
                       [ HE.onClick $ const $
-                          if isScrolling then pressPause else pressPlay
+                          if isScrolling then pauseScroll else resumeScroll
                       ]
                   ]
               , HH.div [ classes [ "flex-grow" ] ] []
               ]
           ]
       ]
+    where
+    someCode pos =
+      HH.div
+        [ classes editorClasses
+        , CSS.style do
+            case (i.cursor + pos) `mod` 4 of
+              0 -> flyIn
+              1 -> flyOut
+              2 -> shuffle
+              3 -> shuffle
+              _ -> panic
+        ]
+        [ hilightCode
+            [ HP.attr (H.AttrName "language") "haskell"
+            ]
+            [ HH.code
+                [ HP.attr (H.AttrName "slot") "code"
+                , HP.ref (H.RefLabel $ "code" <> show pos)
+                ]
+                [ HH.text
+                    (nelmod i.playlist.sequence jump).code
+                ]
+            ]
+        ]
+      where
+      jump = (((i.cursor + (pos + 1)) / 4) * 4) - pos
 
   handleAction
-    :: V.EditorAction
-    -> HalogenM N.EditorState V.EditorAction () V.EditorOutput m Unit
+    :: T.EditorAction
+    -> HalogenM T.EditorState T.EditorAction () T.EditorOutput m Unit
   handleAction = match
     { input: \{ cursor, playlist, isScrolling } ->
         do
@@ -153,10 +219,12 @@ component =
             , isScrolling = isScrolling
             , playlist = playlist
             }
-    , showPlayer: const $ do
+    , showPlayer: const do
         H.raise showPlayer
-    , pressPause: const $ do
-        H.raise pressPause
-    , pressPlay: const $ do
-        H.raise pressPlay
+    , pauseScroll: const do
+        H.raise pauseScroll
+    , resumeScroll: const do
+        { cursor } <- H.get
+        H.getHTMLElementRef (H.RefLabel $ "code" <> show ((4 - (cursor `mod` 4)) `mod` 4))
+          >>= traverse_ (H.liftEffect <<< innerText >=> H.raise <<< playScroll)
     }

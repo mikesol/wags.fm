@@ -2,17 +2,22 @@ module Control.Controller where
 
 import Prelude
 
+import Control.Emitter (loopEmitter)
 import Control.Monad.Except (runExceptT, throwError)
 import Control.Parallel (parTraverse)
 import Control.Promise (toAffE)
+import Data.Array as Array
 import Data.Array.NonEmpty as NEA
+import Data.Array.NonEmpty.Internal (NonEmptyArray)
 import Data.Either (Either(..), either)
 import Data.Foldable (fold, for_)
 import Data.Int (round)
 import Data.List (List)
 import Data.List as List
+import Data.List.Types (NonEmptyList(..))
 import Data.Map as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Newtype (unwrap)
 import Data.NonEmpty (NonEmpty, (:|))
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\))
@@ -30,8 +35,8 @@ import JIT.API as API
 import JIT.Compile (compile)
 import JIT.EvalSources (evalSources)
 import Simple.JSON as JSON
+import Types as T
 import Unsafe.Coerce (unsafeCoerce)
-import Control.Emitter (loopEmitter)
 import WAGS.Interpret (close, defaultFFIAudio, makeUnitCache, constant0Hack, context, contextResume, contextState)
 import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)
@@ -56,13 +61,10 @@ compileUrl = "https://supvghemaw.eu-west-1.awsapprunner.com"
 ----------
 type SetAudioContext = AudioContext -> Effect Unit
 ----------
-type Playlist = Array { code :: String, wag :: AFuture, duration :: Number }
-type SetPlaylist = Playlist -> Effect Unit
+type SetPlaylist = T.PlaylistSequence -> Effect Unit
 ----------
-type ScrollIndex = Int
-type SetScrollIndex = Int -> Effect Unit
-----------
-type SetCode = String -> Effect Unit
+type Cursor = Int
+type SetCursor = Int -> Effect Unit
 ----------
 type IsScrolling = Boolean
 type SetIsScrolling = Boolean -> Effect Unit
@@ -101,33 +103,33 @@ type StopWagsSig =
 ---
 
 type PlayScrollSig =
-  { scrollIndex :: ScrollIndex
-  , setCode :: SetCode
-  , cleanErrorState :: Effect Unit
+  { cursor :: Cursor
   , setStopScrolling :: SetStopScrolling
-  , setScrollIndex :: SetScrollIndex
+  , setCursor :: SetCursor
   , isScrolling :: IsScrolling
   , setIsScrolling :: SetIsScrolling
-  , newWagPush :: NewWagPush
-  , currentPlaylist :: Playlist
-  , setCurrentPlaylist :: SetPlaylist
-  , compileOnPlay :: Boolean
-  , code :: String
+  , newWagPush :: NewWagPush 
+  , currentPlaylist :: T.PlaylistSequence
+  , compileOnPlay ::
+      Maybe
+        { code :: String
+        , cleanErrorState :: Effect Unit
+        , setCurrentPlaylist :: SetPlaylist
+        , ourFaultErrorCallback :: Error -> Effect Unit
+        , yourFaultErrorCallback :: Array API.CompilerError -> Effect Unit
+        }
   , bufferCache :: BufferCache
   , audioContext :: AudioContext
-  , ourFaultErrorCallback :: Error -> Effect Unit
-  , yourFaultErrorCallback :: Array API.CompilerError -> Effect Unit
   }
   -> Effect Unit
 
 ---
 
 type PlayWagsSig =
-  { scrollIndex :: ScrollIndex
-  , setCode :: SetCode
+  { cursor :: Cursor
   , stopScrolling :: StopScrolling
   , setStopScrolling :: SetStopScrolling
-  , setScrollIndex :: SetScrollIndex
+  , setCursor :: SetCursor
   , setNewWagPush :: SetNewWagPush
   , setIsScrolling :: SetIsScrolling
   , setAudioContext :: SetAudioContext
@@ -135,7 +137,7 @@ type PlayWagsSig =
   , bufferCache :: BufferCache
   , setIsPlaying :: SetIsPlaying
   , setStopWags :: SetStopWags
-  , currentPlaylist :: Playlist
+  , currentPlaylist :: T.PlaylistSequence
   }
   -> Effect Unit
 
@@ -168,11 +170,20 @@ pauseScroll { setIsScrolling, stopScrolling, setStopScrolling } =
 al :: NonEmpty Array ~> NonEmpty List
 al (a :| b) = a :| (List.fromFoldable b)
 
+nea2nel :: NonEmptyArray ~> NonEmptyList
+nea2nel a = NonEmptyList (h :| List.fromFoldable t)
+  where
+  h :| t = NEA.toNonEmpty a
+
+nel2nea :: NonEmptyList ~> NonEmptyArray
+nel2nea a = NEA.fromNonEmpty (h :| Array.fromFoldable t)
+  where
+  h :| t = unwrap a
+
 playScroll :: PlayScrollSig
 playScroll
-  { scrollIndex
-  , cleanErrorState
-  , setScrollIndex
+  { cursor
+  , setCursor
   , isScrolling
   , setIsScrolling
   , setStopScrolling
@@ -180,52 +191,52 @@ playScroll
   , audioContext
   , compileOnPlay
   , bufferCache
-  , ourFaultErrorCallback
-  , yourFaultErrorCallback
-  , code
-  , setCode
   , currentPlaylist
-  , setCurrentPlaylist
   } =
-  for_ (NEA.fromArray currentPlaylist) \nea' ->
+  let
+    nea' = nel2nea currentPlaylist
+  in
     when (not isScrolling) $ launchAff_ do
-      liftEffect $ cleanErrorState
+      for_ compileOnPlay (liftEffect <<< _.cleanErrorState)
       nea <- map (al <<< NEA.toNonEmpty) $
-        if not compileOnPlay then pure nea'
-        else makeAff \cb -> do
-          compile
-            { code
-            , loaderUrl
-            , compileUrl
-            , ourFaultErrorCallback: \err -> do
-                ourFaultErrorCallback err
-                cb $ Left err
-            , yourFaultErrorCallback: \err -> do
-                yourFaultErrorCallback err
-                cb $ Left $ error $ JSON.writeJSON err
-            , successCallback: \{ js } -> do
-                wag' <- liftEffect $ evalSources js
-                  >>= runExceptT <<< readProp "wag"
-                  >>= either (throwError <<< error <<< show) pure
-                let wag = (unsafeCoerce :: Foreign -> AFuture) wag'
-                let
-                  newNea = fromMaybe nea' $ NEA.modifyAt (scrollIndex `mod` NEA.length nea')
-                    (_ { wag = wag, code = code })
-                    nea'
-                launchAff_ do
-                  doDownloads' audioContext bufferCache mempty identity wag
-                  liftEffect $ setCurrentPlaylist $ NEA.toArray newNea
-            }
-          mempty
+        compileOnPlay # maybe (pure nea')
+          \{ code
+           , setCurrentPlaylist
+           , ourFaultErrorCallback
+           , yourFaultErrorCallback
+           } -> makeAff \cb -> do
+            compile
+              { code
+              , loaderUrl
+              , compileUrl
+              , ourFaultErrorCallback: \err -> do
+                  ourFaultErrorCallback err
+                  cb $ Left err
+              , yourFaultErrorCallback: \err -> do
+                  yourFaultErrorCallback err
+                  cb $ Left $ error $ JSON.writeJSON err
+              , successCallback: \{ js } -> do
+                  wag' <- liftEffect $ evalSources js
+                    >>= runExceptT <<< readProp "wag"
+                    >>= either (throwError <<< error <<< show) pure
+                  let wag = (unsafeCoerce :: Foreign -> AFuture) wag'
+                  let
+                    newNea = fromMaybe nea' $ NEA.modifyAt (cursor `mod` NEA.length nea')
+                      (_ { wag = wag, code = code })
+                      nea'
+                  launchAff_ do
+                    doDownloads' audioContext bufferCache mempty identity wag
+                    liftEffect $ setCurrentPlaylist $ (nea2nel newNea)
+              }
+            mempty
       liftEffect do
-        pg <- new scrollIndex
+        pg <- new cursor
         stopScrolling <- subscribe
-          (loopEmitter (_.duration >>> mul 1000.0 >>> round) $ nea)
-          \{ wag, code: upcomingCode } -> do
+          (loopEmitter (_.duration >>> unwrap >>> round) $ nea)
+          \{ wag } -> do
             pg' <- read pg
             let np = pg' + 1
-            setScrollIndex np
-            setCode upcomingCode
+            setCursor np
             write np pg
             newWagPush wag
         setIsScrolling true
@@ -233,16 +244,15 @@ playScroll
 
 playWags :: PlayWagsSig
 playWags
-  { scrollIndex
+  { cursor
   , stopScrolling
   , setStopScrolling
-  , setScrollIndex
+  , setCursor
   , setIsScrolling
   , setNewWagPush
   , isPlaying
   , setIsPlaying
   , bufferCache
-  , setCode
   , setStopWags
   , currentPlaylist
   , setAudioContext
@@ -279,20 +289,10 @@ playWags
           unsub
           close audioCtx
         playScroll
-          { scrollIndex
+          { cursor
           -- no compile as we are restarting
-          , compileOnPlay: false
-          -- all of the memptys are a no-op as there is no compile step
-          -- code is a no-op as there is no compile step
-          -- to-do, group all the no-ops so we don't have all of these monoids
-          -- floating around. they should be under one "maybe"
-          , code: mempty
-          , cleanErrorState: mempty
-          , setCurrentPlaylist: mempty
-          , ourFaultErrorCallback: mempty
-          , yourFaultErrorCallback: mempty
-          , setScrollIndex
-          , setCode
+          , compileOnPlay: Nothing
+          , setCursor
           , audioContext: audioCtx
           , bufferCache
           , isScrolling: false
