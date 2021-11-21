@@ -37,14 +37,19 @@ component =
   initialState _ =
     { playlist: Java.playlist
     , cursor: 0
+    , isScrolling: false
     , isPlaying: false
     , playerIsHidden: false
     , audioContext: Nothing :: Maybe AudioContext
     }
 
-  render { cursor, playlist, isPlaying, playerIsHidden } =
+  render { cursor, playlist, isPlaying, playerIsHidden, isScrolling } =
     HH.div [ classes [ "w-screen", "h-screen" ] ]
-      [ HH.slot _editor unit Editor.component { cursor, playlist }
+      [ HH.slot _editor unit Editor.component
+          { cursor
+          , playlist
+          , isScrolling
+          }
           (inj (Proxy :: _ "handleEditorOutput"))
       , HH.slot _player unit Player.component
           { playlist
@@ -57,9 +62,9 @@ component =
   handleAction = match
     { handlePlayerOutput: match
         { pressPlay: const $ do
-            H.modify_ _ { isPlaying = true }
+            H.modify_ _ { isPlaying = true, isScrolling = true }
         , pressStop: const $ do
-            H.modify_ _ { isPlaying = false }
+            H.modify_ _ { isPlaying = false, isScrolling = false }
         , choosePlaylist: \playlist -> do
             H.modify_ _ { playlist = playlist }
         , hidePlayer: const $ do
@@ -68,6 +73,10 @@ component =
     , handleEditorOutput: match
         { showPlayer: const $ do
             H.modify_ _ { playerIsHidden = false }
+        , pressPlay: const $ do
+            H.modify_ _ { isScrolling = true }
+        , pressPause: const $ do
+            H.modify_ _ { isScrolling = false }
         }
     }
 

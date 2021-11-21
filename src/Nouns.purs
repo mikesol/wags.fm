@@ -19,11 +19,13 @@ type Playlist =
 type EditorInput =
   { playlist :: Playlist
   , cursor :: Cursor
+  , isScrolling :: Boolean
   }
 
 type EditorState =
   { playlist :: Playlist
   , cursor :: Cursor
+  , isScrolling :: Boolean
   }
 
 type PlayerInput =

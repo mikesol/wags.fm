@@ -23,6 +23,16 @@ showPlayer
    . Variant (showPlayer :: Unit | r)
 showPlayer = inj (Proxy :: _ "showPlayer") unit
 
+pressPlay
+  :: forall r
+   . Variant (pressPlay :: Unit | r)
+pressPlay = inj (Proxy :: _ "pressPlay") unit
+
+pressPause
+  :: forall r
+   . Variant (pressPause :: Unit | r)
+pressPause = inj (Proxy :: _ "pressPause") unit
+
 hilightCode :: forall w i. HH.Node (I.Interactive ()) w i
 hilightCode = HH.element (HH.ElemName "deckgo-highlight-code")
 
@@ -36,9 +46,17 @@ component =
     , eval: H.mkEval H.defaultEval { handleAction = handleAction }
     }
   where
-  initialState { cursor, playlist } = { cursor, playlist }
+  initialState
+    { cursor
+    , playlist
+    , isScrolling
+    } =
+    { cursor
+    , playlist
+    , isScrolling
+    }
 
-  render _ =
+  render { isScrolling } =
     HH.div
       [ classes
           [ "w-full"
@@ -108,8 +126,17 @@ component =
           , HH.div [ classes [ "flex-grow-0", "flex", "flex-row" ] ]
               [ HH.div [ classes [ "flex-grow" ] ] []
               , HH.div
-                  [ classes [ "flex-grow-0" ] ]
-                  [ icon (SVGIcons.playSolid 50 50) [] ]
+                  [ classes [ "flex-grow-0", "cursor-pointer" ] ]
+                  [ icon
+                      ( ( if isScrolling then
+                            SVGIcons.pauseSolid
+                          else SVGIcons.playSolid
+                        ) 50 50
+                      )
+                      [ HE.onClick $ const $
+                          if isScrolling then pressPause else pressPlay
+                      ]
+                  ]
               , HH.div [ classes [ "flex-grow" ] ] []
               ]
           ]
@@ -119,9 +146,17 @@ component =
     :: V.EditorAction
     -> HalogenM N.EditorState V.EditorAction () V.EditorOutput m Unit
   handleAction = match
-    { input: \{ cursor, playlist } ->
+    { input: \{ cursor, playlist, isScrolling } ->
         do
-          H.modify_ _ { cursor = cursor, playlist = playlist }
+          H.modify_ _
+            { cursor = cursor
+            , isScrolling = isScrolling
+            , playlist = playlist
+            }
     , showPlayer: const $ do
         H.raise showPlayer
+    , pressPause: const $ do
+        H.raise pressPause
+    , pressPlay: const $ do
+        H.raise pressPlay
     }

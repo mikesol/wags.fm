@@ -13,6 +13,7 @@ type HandleEditorOutput r = (handleEditorOutput :: EditorOutput | r)
 type HandlePlayerInput r = (input :: N.PlayerInput | r)
 type HandlePlayerOutput r = (handlePlayerOutput :: PlayerOutput | r)
 type HidePlayer r = (hidePlayer :: Unit | r)
+type PressPause r = (pressPause :: Unit | r)
 type PressPlay r = (pressPlay :: Unit | r)
 type PressStop r = (pressStop :: Unit | r)
 type ShowPlayer r = (showPlayer :: Unit | r)
@@ -20,10 +21,14 @@ type ShowPlayer r = (showPlayer :: Unit | r)
 ----
 type EditorAction = Variant
   $ HandleEditorInput
+  + PressPlay
+  + PressPause
   + ShowPlayer ()
 
 type EditorOutput = Variant
   $ ShowPlayer
+  + PressPlay
+  + PressPause
   + ()
 
 type MainAction = Variant
