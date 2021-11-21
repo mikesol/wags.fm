@@ -2,14 +2,18 @@ module Components.Editor where
 
 import Prelude
 
+import CSS (left, px)
 import DOM.HTML.Indexed as I
 import Data.Variant (Variant, inj, match)
 import Halogen (HalogenM)
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.HTML.CSS as CSS
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Nouns as N
+import SVGIcons as SVGIcons
+import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
 import Util (classes)
 import Verbs as V
@@ -21,6 +25,8 @@ showPlayer = inj (Proxy :: _ "showPlayer") unit
 
 hilightCode :: forall w i. HH.Node (I.Interactive ()) w i
 hilightCode = HH.element (HH.ElemName "deckgo-highlight-code")
+
+editorClasses = [ "absolute", "w-full" ] :: Array String
 
 component :: forall q m. H.Component q N.EditorInput V.EditorOutput m
 component =
@@ -71,12 +77,40 @@ component =
               , "row-end-5"
               , "col-start-2"
               , "col-end-5"
+              , "flex"
+              , "flex-col"
               ]
           ]
-          [ hilightCode
-              [ HP.attr (H.AttrName "language") "haskell"
+          [ HH.div [ classes [ "relative", "flex-grow" ] ]
+              [ HH.div
+                  [ classes editorClasses
+                  , CSS.style do
+                      left (px (-200.0))
+                  ]
+                  [ hilightCode
+                      [ HP.attr (H.AttrName "language") "haskell"
+                      ]
+                      [ HH.code [ HP.attr (H.AttrName "slot") "code" ] [ HH.text "module foo where" ]
+                      ]
+                  ]
+              , HH.div
+                  [ classes editorClasses
+                  , CSS.style do
+                      left (px (200.0))
+                  ]
+                  [ hilightCode
+                      [ HP.attr (H.AttrName "language") "haskell"
+                      ]
+                      [ HH.code [ HP.attr (H.AttrName "slot") "code" ] [ HH.text "module foo where" ]
+                      ]
+                  ]
               ]
-              [ HH.code [ HP.attr (H.AttrName "slot") "code" ] [ HH.text "module foo where" ]
+          , HH.div [ classes [ "flex-grow-0", "flex", "flex-row" ] ]
+              [ HH.div [ classes [ "flex-grow" ] ] []
+              , HH.div
+                  [ classes [ "flex-grow-0" ] ]
+                  [ icon (SVGIcons.playSolid 50 50) [] ]
+              , HH.div [ classes [ "flex-grow" ] ] []
               ]
           ]
       ]

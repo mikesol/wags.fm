@@ -11,6 +11,11 @@ module.exports = {
 		filename: "bundle.js",
 	},
 	plugins: [new webpack.EnvironmentPlugin({ WAGSI_MODE: "live" })],
+	resolve: {
+		alias: {
+			"../Halogen.Component/index.js": "../../src/Halogen.Component.patch.js",
+		},
+	},
 	module: {
 		rules: [
 			{
