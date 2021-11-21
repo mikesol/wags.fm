@@ -21,6 +21,7 @@
 	"scripts": {
 		"start": "spago install && spago build && webpack serve --mode=development --open",
 		"build": "webpack",
+		"format:dhall": "dhall lint *.dhall",
 		"format": "purs-tidy format-in-place src/**/*.purs src/*.purs"
 	},
 	"optionalDependencies": {

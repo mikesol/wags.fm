@@ -1,5 +1,6 @@
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.14.4-20210919/packages.dhall sha256:03516fdd4f6d1bd6c9eb5e63cf3af3037bc079459117ab93eb85b6eb46e258a7
+      https://github.com/purescript/package-sets/releases/download/psc-0.14.4-20210919/packages.dhall
+        sha256:03516fdd4f6d1bd6c9eb5e63cf3af3037bc079459117ab93eb85b6eb46e258a7
 
 let overrides = {=}
 
@@ -21,13 +22,16 @@ let additions =
         { dependencies = [ "affjax" ]
         , repo = "https://github.com/mikesol/purescript-jit.git"
         , version = "v0.0.0"
-        }, svg-parser = {
-          repo = "https://github.com/rnons/purescript-svg-parser.git", version = "v2.0.0"
-          , dependencies=[ "string-parsers"]
         }
-       , svg-parser-halogen = {
-          repo = "https://github.com/rnons/purescript-svg-parser-halogen.git", version = "v2.0.0"
-          , dependencies=[ "halogen" , "svg-parser"]
+      , svg-parser =
+        { repo = "https://github.com/rnons/purescript-svg-parser.git"
+        , version = "v2.0.0"
+        , dependencies = [ "string-parsers" ]
+        }
+      , svg-parser-halogen =
+        { repo = "https://github.com/rnons/purescript-svg-parser-halogen.git"
+        , version = "v2.0.0"
+        , dependencies = [ "halogen", "svg-parser" ]
         }
       , event =
         { dependencies =
@@ -136,32 +140,33 @@ let additions =
       , framer-motion =
         { dependencies =
           [ "aff"
-  , "aff-promise"
-  , "arrays"
-  , "console"
-  , "effect"
-  , "foreign"
-  , "foreign-object"
-  , "heterogeneous"
-  , "literals"
-  , "maybe"
-  , "nullable"
-  , "prelude"
-  , "psci-support"
-  , "react-basic"
-  , "react-basic-dom"
-  , "react-basic-hooks"
-  , "record"
-  , "tuples"
-  , "two-or-more"
-  , "typelevel-prelude"
-  , "unsafe-coerce"
-  , "untagged-union"
-  , "web-dom"
-  , "web-events"
-  , "web-uievents"
+          , "aff-promise"
+          , "arrays"
+          , "console"
+          , "effect"
+          , "foreign"
+          , "foreign-object"
+          , "heterogeneous"
+          , "literals"
+          , "maybe"
+          , "nullable"
+          , "prelude"
+          , "psci-support"
+          , "react-basic"
+          , "react-basic-dom"
+          , "react-basic-hooks"
+          , "record"
+          , "tuples"
+          , "two-or-more"
+          , "typelevel-prelude"
+          , "unsafe-coerce"
+          , "untagged-union"
+          , "web-dom"
+          , "web-events"
+          , "web-uievents"
           ]
-        , repo = "https://github.com/i-am-the-slime/purescript-framer-motion.git"
+        , repo =
+            "https://github.com/i-am-the-slime/purescript-framer-motion.git"
         , version = "v0.1.0"
         }
       , convertable-options =

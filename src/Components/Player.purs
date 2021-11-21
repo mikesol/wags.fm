@@ -15,6 +15,8 @@ import Halogen.HTML.CSS as CSS
 import Halogen.HTML.Events as HE
 import Nouns as N
 import Playlists as Playlists
+import SVGIcons as SVGIcons
+import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
 import Util (classes)
 import Verbs as V
@@ -144,17 +146,19 @@ component =
               [ HH.div [ classes [ "flex-grow" ] ] []
               , HH.div [ classes [ "flex-grow-0" ] ]
                   [ HH.div [ classes $ [ "p-3", "text-center" ] <> bgStyling ]
-                      [ HH.i
-                          [ classes
-                              [ if isPlaying then "gg-play-stop-o"
-                                else "gg-play-button-o"
-                              , "cursor-pointer"
-                              ]
-                          , HE.onClick
-                              $ const
-                              $ if isPlaying then pressStop else pressPlay
+                      [ HH.div
+                          [ classes [ "cursor-pointer" ]
                           ]
-                          []
+                          [ icon
+                              ( ( if isPlaying then SVGIcons.stop
+                                  else SVGIcons.play
+                                ) 50 50
+                              )
+                              [ HE.onClick
+                                  $ const
+                                  $ if isPlaying then pressStop else pressPlay
+                              ]
+                          ]
                       , HH.div [] [ HH.text playlist.title ]
                       ]
                   ]
