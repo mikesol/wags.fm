@@ -4,7 +4,8 @@ import Prelude
 
 import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, iterationCount, left, normalAnimationDirection, pct, sec)
 import DOM.HTML.Indexed as I
-import Data.Foldable (for_, traverse_)
+import Data.Foldable (traverse_)
+import Data.Maybe (Maybe(..))
 import Data.Variant (Variant, inj, match)
 import Effect.Class (class MonadEffect)
 import Halogen (HalogenM)
@@ -48,7 +49,7 @@ editorClasses = [ "absolute", "w-full" ] :: Array String
 flyIn :: CSS
 flyIn = animation
   (fromString "flyIn")
-  (sec 0.6)
+  (sec 1.0)
   EaseInOut
   (sec 0.0)
   (iterationCount 1.0)
@@ -57,8 +58,8 @@ flyIn = animation
 
 flyOut :: CSS
 flyOut = animation
-  (fromString "flyIn")
-  (sec 0.6)
+  (fromString "flyOut")
+  (sec 1.0)
   EaseInOut
   (sec 0.0)
   (iterationCount 1.0)
@@ -101,7 +102,10 @@ component =
   H.mkComponent
     { initialState
     , render
-    , eval: H.mkEval H.defaultEval { handleAction = handleAction }
+    , eval: H.mkEval H.defaultEval
+        { handleAction = handleAction
+        , receive = Just <<< inj (Proxy :: _ "input")
+        }
     }
   where
   initialState
