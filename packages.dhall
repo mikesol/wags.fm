@@ -126,7 +126,7 @@ let additions =
           , "strings"
           ]
         , repo = "https://github.com/mikesol/purescript-wags-lib.git"
-        , version = "v0.0.53"
+        , version = "v0.0.54"
         }
       , painting =
         { dependencies =
