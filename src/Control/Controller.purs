@@ -24,6 +24,7 @@ import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Aff (error, launchAff_, makeAff)
 import Effect.Class (liftEffect)
+import Effect.Class.Console as Log
 import Effect.Exception (Error)
 import Effect.Ref (new, read, write)
 import FRP.Behavior (Behavior, behavior)
@@ -37,7 +38,7 @@ import JIT.EvalSources (evalSources)
 import Simple.JSON as JSON
 import Types as T
 import Unsafe.Coerce (unsafeCoerce)
-import WAGS.Interpret (close, defaultFFIAudio, makeUnitCache, constant0Hack, context, contextResume, contextState)
+import WAGS.Interpret (close, constant0Hack, context, contextResume, contextState, makeFFIAudioSnapshot)
 import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Engine (engine)
@@ -96,6 +97,7 @@ type StopWagsSig =
   , setIsScrolling :: SetIsScrolling
   , setIsPlaying :: SetIsPlaying
   , stopWags :: StopWags
+  , setCursor :: SetCursor
   , setStopWags :: SetStopWags
   }
   -> Effect Unit
@@ -108,7 +110,7 @@ type PlayScrollSig =
   , setCursor :: SetCursor
   , isScrolling :: IsScrolling
   , setIsScrolling :: SetIsScrolling
-  , newWagPush :: NewWagPush 
+  , newWagPush :: NewWagPush
   , currentPlaylist :: T.PlaylistSequence
   , compileOnPlay ::
       Maybe
@@ -153,11 +155,13 @@ stopWags
   , setIsPlaying
   , stopScrolling
   , setStopScrolling
+  , setCursor
   , stopWags: sw
   , setStopWags
   } =
   setIsScrolling false
     *> setIsPlaying false
+    *> setCursor (-1)
     *> stopScrolling
     *> setStopScrolling (pure unit)
     *> sw
@@ -224,9 +228,14 @@ playScroll
                     newNea = fromMaybe nea' $ NEA.modifyAt (cursor `mod` NEA.length nea')
                       (_ { wag = wag, code = code })
                       nea'
+                  Log.info "successfully processed js"
                   launchAff_ do
+                    Log.info "doing downloads"
                     doDownloads' audioContext bufferCache mempty identity wag
-                    liftEffect $ setCurrentPlaylist $ (nea2nel newNea)
+                    let newNel = nea2nel newNea
+                    liftEffect $ setCurrentPlaylist $ newNel
+                    Log.info "calling callback"
+                    liftEffect $ cb $ Right newNea
               }
             mempty
       liftEffect do
@@ -269,7 +278,7 @@ playWags
     -- void the constant 0 hack
     -- this will result in a very slight performance decrease but makes iOS and Mac more sure
     _ <- liftEffect $ constant0Hack audioCtx
-    unitCache <- liftEffect makeUnitCache
+    ffiAudio <- liftEffect $ makeFFIAudioSnapshot audioCtx
     stopScrolling
     { event, push } <- create
     launchAff_ do
@@ -280,7 +289,7 @@ playWags
       let FullSceneBuilder { triggerWorld, piece } = engine (pure unit) (map (const <<< const) event) $ (Left (readableToBehavior bufferCache.read))
       trigger /\ world <- snd $ triggerWorld (audioCtx /\ (pure (pure {} /\ pure {})))
       unsub <- liftEffect $ subscribe
-        (run trigger world { easingAlgorithm } (defaultFFIAudio audioCtx unitCache) piece)
+        (run trigger world { easingAlgorithm } (ffiAudio) piece)
         (\(_ :: Run TidalRes Analysers) -> pure unit)
       liftEffect do
         setNewWagPush push

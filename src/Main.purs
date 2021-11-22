@@ -48,7 +48,7 @@ component =
   where
   initialState _ =
     { playlist: Java.playlist
-    , cursor: 0
+    , cursor: -1
     , stopWags: mempty
     , stopScrolling: mempty
     , isScrolling: false
@@ -139,7 +139,7 @@ component =
               , isPlaying
               , bufferCache:
                   { read: Ref.read bufferCache
-                  , write: flip Ref.write bufferCache
+                  , write: flip Ref.modify_ bufferCache <<< Map.union
                   }
               , setIsPlaying: listener <<< inj (Proxy :: _ "setIsPlaying")
               , setStopWags: listener <<< inj (Proxy :: _ "setStopWags")
@@ -153,6 +153,7 @@ component =
               , stopScrolling
               , setStopScrolling: listener <<< inj (Proxy :: _ "setStopScrolling")
               , stopWags
+              , setCursor: listener <<< inj (Proxy :: _ "setCursor")
               , setStopWags: listener <<< inj (Proxy :: _ "setStopWags")
               }
         , choosePlaylist: \playlist -> do

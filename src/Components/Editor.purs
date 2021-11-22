@@ -4,8 +4,10 @@ import Prelude
 
 import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, iterationCount, left, normalAnimationDirection, pct, sec)
 import DOM.HTML.Indexed as I
+import Data.Array (intercalate)
 import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..))
+import Data.String as String
 import Data.Variant (Variant, inj, match)
 import Effect.Class (class MonadEffect)
 import Halogen (HalogenM)
@@ -41,9 +43,6 @@ pauseScroll
    . Variant (pauseScroll :: Unit | r)
 pauseScroll = inj (Proxy :: _ "pauseScroll") unit
 
-hilightCode :: forall w i. HH.Node (I.Interactive ()) w i
-hilightCode = HH.element (HH.ElemName "deckgo-highlight-code")
-
 editorClasses = [ "absolute", "w-full" ] :: Array String
 
 flyIn :: CSS
@@ -72,30 +71,15 @@ shuffle = left (pct 200.0)
 panic :: CSS
 panic = display displayNone
 
-{-
-0 0 -> 0
-0 1 -> 0
-0 2 -> 0
-0 3 -> 4
-0 4 -> 4
-0 5 -> 4
-0 6 -> 4
-0 7 -> 8
-0 (((n+1) / 4) * 4) - 0
-1 0 -> -1
-1 1 -> -1
-1 2 -> 3
-1 3 -> 3
-1 4 -> 3
-1 5 -> 3
-1 6 -> 7
-1 7 -> 7
-1 (((n+2) / 4) * 4) - 1
-2 0 -> -2
-2 1 -> 2
-2 2 -> 2
-2 (((n+3) / 4) * 4) - 2
--}
+asMain :: String -> String
+asMain = intercalate "\n"
+  <<< map
+    ( (if _ then _ else _)
+        <$> (eq "module " <<< String.take 7)
+        <*> (const "module Main where")
+        <*> identity
+    )
+  <<< String.split (String.Pattern "\n")
 
 component :: forall q m. MonadEffect m => H.Component q T.EditorInput T.EditorOutput m
 component =
@@ -190,27 +174,30 @@ component =
       HH.div
         [ classes editorClasses
         , CSS.style do
-            case (i.cursor + pos) `mod` 4 of
+            case cMod of
               0 -> flyIn
               1 -> flyOut
               2 -> shuffle
               3 -> shuffle
               _ -> panic
         ]
-        [ hilightCode
-            [ HP.attr (H.AttrName "language") "haskell"
+        [ HH.pre
+            [ HE.onClick $ const
+                (inj (Proxy :: _ "pauseScroll") unit)
+            , classes [ "language-purescript" ]
             ]
             [ HH.code
-                [ HP.attr (H.AttrName "slot") "code"
+                [ HP.attr (H.AttrName "contenteditable") "true"
+                , classes [ "language-purescript" ]
                 , HP.ref (H.RefLabel $ "code" <> show pos)
                 ]
-                [ HH.text
-                    (nelmod i.playlist.sequence jump).code
+                [ HH.text $ asMain (nelmod i.playlist.sequence jump).code
                 ]
             ]
         ]
       where
       jump = (((i.cursor + (pos + 1)) / 4) * 4) - pos
+      cMod = (i.cursor + pos) `mod` 4
 
   handleAction
     :: T.EditorAction
