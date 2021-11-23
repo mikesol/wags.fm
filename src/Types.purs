@@ -2,8 +2,10 @@ module Types where
 
 import Prelude
 
+import Data.Functor.Variant (VariantF)
 import Data.List.Types (NonEmptyList)
 import Data.Maybe (Maybe)
+import Data.Newtype (class Newtype)
 import Data.Time.Duration (Milliseconds)
 import Data.Variant (Variant)
 import Effect (Effect)
@@ -30,6 +32,24 @@ type PlaylistSequence = NonEmptyList
 type Playlist =
   { title :: String
   , sequence :: PlaylistSequence
+  }
+
+type CodeInput =
+  { pos :: Int
+  , cursor :: Int
+  , playlist :: Playlist
+  , scrollState :: ScrollState
+  }
+newtype CodeQuery a = CodeQuery (VariantF (getCode :: (->) String) a)
+derive instance newtypeCodeQuery :: Newtype (CodeQuery a) _
+type CodeOutput = Variant (pauseScroll :: Unit)
+type CodeAction = Variant (pauseScroll :: Unit, input :: CodeInput)
+type CodeState =
+  { pos :: Int
+  , cursor :: Int
+  , playlist :: Playlist
+  , scrollState :: ScrollState
+  , lastQueriedCode :: Maybe String
   }
 
 type EditorInput =
@@ -88,6 +108,7 @@ type EditorAction = Variant
   , input :: EditorInput
   , showCompileError :: Unit
   , handleModalOutput :: ModalOutput
+  , handleCodeOutput :: CodeOutput
   )
 
 type PlayScrollInfo =

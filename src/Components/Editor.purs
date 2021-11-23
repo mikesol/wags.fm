@@ -3,10 +3,12 @@ module Components.Editor where
 import Prelude
 
 import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, infinite, iterationCount, left, normalAnimationDirection, pct, sec)
+import Components.Code as Code
 import Components.ErrorModal as EM
 import Control.Plus (empty)
 import Data.Array (intercalate)
 import Data.Foldable (traverse_)
+import Data.Functor.Variant as VF
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toMaybe)
 import Data.String as String
@@ -22,9 +24,11 @@ import Halogen.HTML.Properties as HP
 import Halogen.Subscription as HS
 import JIT.API as API
 import Nonbili.DOM (innerText)
+import Record as R
 import SVGIcons as SVGIcons
 import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
+import Types (CodeQuery(..))
 import Types as T
 import Util (classes, nelmod)
 
@@ -60,32 +64,6 @@ spin = animation
   normalAnimationDirection
   forwards
 
-flyIn :: CSS
-flyIn = animation
-  (fromString "flyIn")
-  (sec 1.0)
-  EaseInOut
-  (sec 0.0)
-  (iterationCount 1.0)
-  normalAnimationDirection
-  forwards
-
-flyOut :: CSS
-flyOut = animation
-  (fromString "flyOut")
-  (sec 1.0)
-  EaseInOut
-  (sec 0.0)
-  (iterationCount 1.0)
-  normalAnimationDirection
-  forwards
-
-shuffle :: CSS
-shuffle = left (pct 200.0)
-
-panic :: CSS
-panic = display displayNone
-
 asMain :: String -> String
 asMain = intercalate "\n"
   <<< map
@@ -96,8 +74,13 @@ asMain = intercalate "\n"
     )
   <<< String.split (String.Pattern "\n")
 
+data CodeSlot = CS0 | CS1 | CS2 | CS3
+
+derive instance eqCodeSlot :: Eq CodeSlot
+derive instance ordCodeSlot :: Ord CodeSlot
 type Slots =
   ( modal :: forall query. H.Slot query T.ModalOutput Unit
+  , code :: H.Slot T.CodeQuery T.CodeOutput CodeSlot
   )
 
 compileErrorsToString :: Array API.CompilerError -> String
@@ -143,49 +126,54 @@ component =
           , "grid-cols-5"
           ]
       ] $
-      ( modalShowable # maybe [] \ipt ->
-          [ HH.slot (Proxy :: _ "modal") unit EM.component
-              ipt
-              (inj (Proxy :: _ "handleModalOutput"))
+      [ HH.div
+          [ classes
+              [ "row-start-1"
+              , "row-end-1"
+              , "col-start-5"
+              , "col-end-5"
+              , "flex"
+              , "flex-row"
+              ]
           ]
-      ) <>
-        [ HH.div
-            [ classes
-                [ "row-start-1"
-                , "row-end-1"
-                , "col-start-5"
-                , "col-end-5"
-                , "flex"
-                , "flex-row"
-                ]
-            ]
-            [ HH.div [ classes [ "flex-grow" ] ] []
-            , HH.a
-                [ classes
-                    $
-                      [ "underline"
-                      , "cursor-pointer"
-                      , "p-3"
-                      ]
-                , HE.onClick $ const $ showPlayer
-                ]
-                [ HH.text "Back" ]
-            ]
-        , HH.div
-            [ classes
-                [ "row-start-2"
-                , "row-end-5"
-                , "col-start-2"
-                , "col-end-5"
-                , "flex"
-                , "flex-col"
-                ]
-            ]
-            ( [ HH.div [ classes [ "relative", "flex-grow" ] ]
-                  [ someCode 0
-                  , someCode 1
-                  , someCode 2
-                  , someCode 3
+          [ HH.div [ classes [ "flex-grow" ] ] []
+          , HH.a
+              [ classes
+                  $
+                    [ "underline"
+                    , "cursor-pointer"
+                    , "p-3"
+                    ]
+              , HE.onClick $ const $ showPlayer
+              ]
+              [ HH.text "Back" ]
+          ]
+      , HH.div
+          [ classes
+              [ "row-start-2"
+              , "row-end-5"
+              , "col-start-2"
+              , "col-end-5"
+              , "flex"
+              , "flex-col"
+              ]
+          ]
+          ( let
+              codeBase = { cursor: i.cursor, playlist: i.playlist, scrollState }
+            in
+              [ HH.div [ classes [ "relative", "flex-grow" ] ]
+                  [ HH.slot (Proxy :: _ "code") CS0 Code.component
+                      (R.union codeBase { pos: 0 })
+                      (inj (Proxy :: _ "handleCodeOutput"))
+                  , HH.slot (Proxy :: _ "code") CS1 Code.component
+                      (R.union codeBase { pos: 1 })
+                      (inj (Proxy :: _ "handleCodeOutput"))
+                  , HH.slot (Proxy :: _ "code") CS2 Code.component
+                      (R.union codeBase { pos: 2 })
+                      (inj (Proxy :: _ "handleCodeOutput"))
+                  , HH.slot (Proxy :: _ "code") CS3 Code.component
+                      (R.union codeBase { pos: 3 })
+                      (inj (Proxy :: _ "handleCodeOutput"))
                   ]
               ]
                 <>
@@ -238,41 +226,14 @@ component =
                       , HH.div [ classes [ "flex-grow" ] ] []
                       ]
                   ]
-            )
-        ]
-    where
-    someCode pos =
-      HH.div
-        [ classes editorClasses
-        , CSS.style do
-            case cMod of
-              0 -> flyIn
-              1 -> flyOut
-              2 -> shuffle
-              3 -> shuffle
-              _ -> panic
-        ]
-        [ HH.pre
-            [ HE.onClick $ const
-                (inj (Proxy :: _ "pauseScroll") unit)
-            , classes [ "language-purescript" ]
+          )
+      ] <>
+        ( modalShowable # maybe [] \ipt ->
+            [ HH.slot (Proxy :: _ "modal") unit EM.component
+                ipt
+                (inj (Proxy :: _ "handleModalOutput"))
             ]
-            [ HH.code
-                [ HP.attr (H.AttrName "contenteditable")
-                    ( case scrollState of
-                        T.Loading -> "false"
-                        _ -> "true"
-                    )
-                , classes [ "language-purescript" ]
-                , HP.ref (H.RefLabel $ "code" <> show pos)
-                ]
-                [ HH.text $ asMain (nelmod i.playlist.sequence jump).code
-                ]
-            ]
-        ]
-      where
-      jump = (((i.cursor + (pos + 1)) / 4) * 4) - pos
-      cMod = (i.cursor + pos) `mod` 4
+        )
 
   handleAction
     :: T.EditorAction
@@ -292,6 +253,9 @@ component =
           { unsubscribeFromHalogen = Just unsubscribeFromHalogen
           , listener = HS.notify listener
           }
+    , handleCodeOutput: match
+        { pauseScroll: \_ -> H.raise pauseScroll
+        }
     , showCompileError: const do
         { mostRecentCompileErrors } <- H.get
         H.modify_ _
@@ -328,16 +292,24 @@ component =
           }
     , resumeScroll: const do
         { cursor, listener } <- H.get
-        H.getHTMLElementRef (H.RefLabel $ "code" <> show ((4 - (cursor `mod` 4)) `mod` 4))
-          >>= traverse_
-            ( H.liftEffect <<< innerText >=> H.raise <<< playScroll <<<
-                { code: _
-                , ourFaultErrorCallback: \e -> do
-                    Log.error (show e)
-                    listener $ inj (Proxy :: _ "somethingWentWrong") unit
-                , yourFaultErrorCallback: \e -> do
-                   Log.info "actually calling yfec"
-                   listener $ inj (Proxy :: _ "setMostRecentCompileErrors") e
-                }
-            )
+        let
+          curCode = case (4 - (cursor `mod` 4)) `mod` 4 of
+            0 -> CS0
+            1 -> CS1
+            2 -> CS2
+            _ -> CS3
+        code <- H.request (Proxy :: _ "code")
+          curCode
+          (CodeQuery <<< VF.inj (Proxy :: _ "getCode"))
+        code # traverse_
+          ( H.raise <<< playScroll <<<
+              { code: _
+              , ourFaultErrorCallback: \e -> do
+                  Log.error (show e)
+                  listener $ inj (Proxy :: _ "somethingWentWrong") unit
+              , yourFaultErrorCallback: \e -> do
+                  Log.info "actually calling yfec"
+                  listener $ inj (Proxy :: _ "setMostRecentCompileErrors") e
+              }
+          )
     }

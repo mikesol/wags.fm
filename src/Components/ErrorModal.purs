@@ -11,7 +11,6 @@ import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties (ButtonType(..))
 import Halogen.HTML.Properties as HP
 import Halogen.HTML.Properties.ARIA as ARIA
-import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
 import Types as T
 import Util (classes, classesS)
