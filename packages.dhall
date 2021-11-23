@@ -21,7 +21,7 @@ let additions =
       , jit =
         { dependencies = [ "affjax" ]
         , repo = "https://github.com/mikesol/purescript-jit.git"
-        , version = "v0.0.0"
+        , version = "v0.0.2"
         }
       , nonbili-dom =
         { repo = "https://github.com/nonbili/purescript-nonbili-dom.git"

@@ -217,7 +217,8 @@ component =
     , hidePlayer: const $ do
         H.raise hidePlayer
     , choosePlaylist: \playlist -> do
-        Log.info "choose playlist"
+        -- Log.info "choose playlist"
+        H.raise pressStop
         H.raise (choosePlaylist playlist)
     , input: \{ playlist, isPlaying, isHidden } -> do
         H.modify_ $ \i -> i

@@ -9,6 +9,7 @@
   , "control"
   , "css"
   , "datetime"
+  , "debug"
   , "dom-indexed"
   , "effect"
   , "either"

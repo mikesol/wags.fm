@@ -42,7 +42,8 @@ type CodeInput =
   , jump :: Int
   , cursor :: Int
   , playlist :: Playlist
-  , scrollState :: ScrollState
+  , isEditable :: Boolean
+  , isInErrorState :: Boolean
   }
 
 newtype CodeQuery a = CodeQuery (VariantF (getCode :: (->) String) a)
@@ -55,7 +56,8 @@ type CodeState =
   , jump :: Int
   , cursor :: Int
   , playlist :: Playlist
-  , scrollState :: ScrollState
+  , isEditable :: Boolean
+  , isInErrorState :: Boolean
   , lastQueriedCode :: Maybe String
   }
 

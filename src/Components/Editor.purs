@@ -156,7 +156,17 @@ component =
               ]
           ]
           ( let
-              codeBase = { cursor: i.cursor, playlist: i.playlist, scrollState }
+              codeBase =
+                { cursor: i.cursor
+                , playlist: i.playlist
+                , isEditable: case scrollState of
+                    T.Loading -> false
+                    _ -> true
+                , isInErrorState: case scrollState of
+                    T.YourError -> true
+                    T.OurError -> true
+                    _ -> false
+                }
             in
               [ HH.div [ classes [ "relative", "flex-grow" ] ]
                   [ let
@@ -285,7 +295,7 @@ component =
     , pauseScroll: const do
         H.raise pauseScroll
     , setMostRecentCompileErrors: \mostRecentCompileErrors -> do
-        Log.info "Raising compile error"
+        -- Log.info "Raising compile error"
         H.raise (inj (Proxy :: _ "editorReceivedCompileError") unit)
         H.modify_ _
           { mostRecentCompileErrors = mostRecentCompileErrors
@@ -304,7 +314,7 @@ component =
         code <- H.request (Proxy :: _ "code")
           cursor
           (CodeQuery <<< VF.inj (Proxy :: _ "getCode"))
-        Log.info (code # maybe "did not get code" (append "got code: "))
+        -- Log.info (code # maybe "did not get code" (append "got code: "))
         code # traverse_
           ( H.raise <<< playScroll <<<
               { code: _
@@ -312,7 +322,7 @@ component =
                   Log.error (show e)
                   listener $ inj (Proxy :: _ "somethingWentWrong") unit
               , yourFaultErrorCallback: \e -> do
-                  Log.info "actually calling yfec"
+                  -- Log.info "actually calling yfec"
                   listener $ inj (Proxy :: _ "setMostRecentCompileErrors") e
               }
           )

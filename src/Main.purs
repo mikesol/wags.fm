@@ -11,7 +11,6 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Variant (inj, match)
 import Effect (Effect)
 import Effect.Class (class MonadEffect)
-import Effect.Class.Console as Log
 import Effect.Ref as Ref
 import Halogen (HalogenM)
 import Halogen as H
@@ -19,6 +18,8 @@ import Halogen.Aff (awaitBody, runHalogenAff)
 import Halogen.HTML as HH
 import Halogen.Subscription as HS
 import Halogen.VDom.Driver (runUI)
+import JIT.Compile (compile)
+import JIT.Loader (makeLoader, Loader)
 import Playlists.Java as Java
 import Type.Proxy (Proxy(..))
 import Types as T
@@ -36,8 +37,8 @@ type Slots =
   , editor :: forall query. H.Slot query T.EditorOutput Unit
   )
 
-component :: forall q i o m. MonadEffect m => H.Component q i o m
-component =
+component :: forall q i o m. Loader -> MonadEffect m => H.Component q i o m
+component loader =
   H.mkComponent
     { initialState
     , render
@@ -98,7 +99,7 @@ component =
               , audioContext
               } <- H.get
               bufferCache <- H.get >>= _.bufferCache >>> maybe (H.liftEffect (Ref.new Map.empty)) pure
-              Log.info ("Setting yfec" <> show scrollState)
+              -- Log.info ("Setting yfec" <> show scrollState)
               for_ audioContext \ctx -> H.liftEffect $ C.playScroll
                 { cursor
                 , setCursor: listener <<< inj (Proxy :: _ "setCursor")
@@ -109,6 +110,7 @@ component =
                 , audioContext: ctx
                 , compileOnPlay: Just
                     { code
+                    , loader
                     , cleanErrorState: mempty
                     , setCurrentPlaylist: listener <<< inj (Proxy :: _ "setCurrentPlaylist")
                     , ourFaultErrorCallback
@@ -130,7 +132,7 @@ component =
         , editorInErrorState: const do
             H.modify_ _ { scrollState = T.OurError }
         , editorReceivedCompileError: const do
-            Log.info "Got compile error"
+            -- Log.info "Got compile error"
             H.modify_ _ { scrollState = T.YourError }
         }
     , handlePlayerOutput: match
@@ -173,6 +175,24 @@ component =
             H.modify_ _ { playerIsHidden = true }
         }
     , initialize: const do
+        ------------- we initialize the whole application with a call to the compiler
+        ------------- this makes future calls go way faster
+        H.liftEffect do
+          compile
+            { code:
+                """module Main where
+
+    import WAGS.Lib.Tidal (AFuture)
+    import WAGS.Lib.Tidal.Tidal (make, s)
+
+    wag :: AFuture
+    wag = make 1.0 { earth: s "bd" }"""
+            , loader
+            , compileUrl: C.compileUrl
+            , ourFaultErrorCallback: mempty
+            , yourFaultErrorCallback: mempty
+            , successCallback: mempty
+            }
         { emitter, listener } <- H.liftEffect $ HS.create
         bufferCache <- H.liftEffect $ Ref.new (Map.empty :: SampleCache)
         unsubscribeFromHalogen <- H.subscribe emitter
@@ -202,4 +222,5 @@ component =
 main :: Effect Unit
 main = runHalogenAff do
   body <- awaitBody
-  runUI component unit body
+  let loader = makeLoader C.loaderUrl
+  runUI (component loader) unit body

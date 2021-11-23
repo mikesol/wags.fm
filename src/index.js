@@ -4,7 +4,8 @@ import "./prism.js";
 import main from "../output/Main";
 import "../output/Components.Editor";
 import "../output/Components.Player";
-
+import { defineCustomElements as deckDeckGoElement } from "@deckdeckgo/highlight-code/dist/loader";
+deckDeckGoElement();
 main.main();
 
 if (module.hot) {

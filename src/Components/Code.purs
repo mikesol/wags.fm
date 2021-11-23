@@ -3,12 +3,14 @@ module Components.Code where
 import Prelude
 
 import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, iterationCount, left, normalAnimationDirection, pct, sec)
+import DOM.HTML.Indexed as I
 import Data.Array (intercalate)
 import Data.Functor.Variant as VF
 import Data.Maybe (Maybe(..), fromMaybe', maybe)
 import Data.Newtype (unwrap)
 import Data.String as String
-import Data.Variant (Variant, inj, match)
+import Data.Variant (inj, match)
+import Debug (spy)
 import Effect.Class (class MonadEffect)
 import Effect.Class.Console as Log
 import Halogen (HalogenM)
@@ -22,25 +24,8 @@ import Type.Proxy (Proxy(..))
 import Types as T
 import Util (classes, nelmod)
 
-showPlayer
-  :: forall r
-   . Variant (showPlayer :: Unit | r)
-showPlayer = inj (Proxy :: _ "showPlayer") unit
-
-resumeScroll
-  :: forall r. Variant (resumeScroll :: Unit | r)
-resumeScroll = inj (Proxy :: _ "resumeScroll") unit
-
-playScroll
-  :: forall r
-   . T.PlayScrollInfo
-  -> Variant (playScroll :: T.PlayScrollInfo | r)
-playScroll = inj (Proxy :: _ "playScroll")
-
-pauseScroll
-  :: forall r
-   . Variant (pauseScroll :: Unit | r)
-pauseScroll = inj (Proxy :: _ "pauseScroll") unit
+hilightCode :: forall w i. HH.Node (I.Interactive ()) w i
+hilightCode = HH.element (HH.ElemName "deckgo-highlight-code")
 
 editorClasses = [ "absolute", "w-full" ] :: Array String
 
@@ -99,13 +84,15 @@ component =
     { pos
     , cursor
     , playlist
+    , isInErrorState
     , jump
-    , scrollState
+    , isEditable
     } =
     { pos
     , cursor
     , playlist
-    , scrollState
+    , isEditable
+    , isInErrorState
     , jump
     , lastQueriedCode: Nothing
     }
@@ -123,31 +110,14 @@ component =
               3 -> shuffle
               _ -> panic
         ]
-        [ HH.pre
-            ( [ classes [ "language-purescript" ]
-              ] <> case i.scrollState of
-                T.YourError -> []
-                T.OurError -> []
-                _ ->
-                  [ HE.onClick $ const
-                      (inj (Proxy :: _ "pauseScroll") unit)
-                  ]
-            )
-            [ HH.code
-                [ HP.attr (H.AttrName "contenteditable")
-                    ( case i.scrollState of
-                        T.Loading -> "false"
-                        _ -> "true"
-                    )
-                , classes [ "language-purescript" ]
-                , HP.ref (H.RefLabel $ "code")
-                ]
+        [ hilightCode
+            [ HP.attr (H.AttrName "language") "purescript"
+            , HP.attr (H.AttrName "editable") (if i.isEditable then "true" else "false")
+            , HE.onClick $ const (inj (Proxy :: _ "pauseScroll") unit)
+            ]
+            [ HH.code [ HP.attr (H.AttrName "slot") "code", HP.ref (H.RefLabel $ "code") ]
                 [ HH.text $ fromMaybe' (\_ -> asMain (nelmod i.playlist.sequence i.jump).code)
-                    ( case i.scrollState of
-                        T.YourError -> i.lastQueriedCode
-                        T.OurError -> i.lastQueriedCode
-                        _ -> Nothing
-                    )
+                    (if i.isInErrorState then i.lastQueriedCode else Nothing)
                 ]
             ]
         ]
@@ -173,16 +143,56 @@ component =
          , cursor
          , jump
          , playlist
-         , scrollState
+         , isEditable
+         , isInErrorState
          } -> do
-          Log.info ("Receiving pos: " <> show pos <> " cursor: " <> show cursor)
-          H.modify_ _
-            { pos = pos
-            , cursor = cursor
-            , jump = jump
-            , playlist = playlist
-            , scrollState = scrollState
-            }
+          st <- H.get
+          -- Log.info ("Receiving pos: " <> show pos <> " cursor: " <> show cursor)
+          when
+            ( (pos /= st.pos)
+                || (cursor /= st.cursor)
+                || (jump /= st.jump)
+                || (isEditable /= st.isEditable) /= (isInErrorState /= st.isInErrorState)
+                || ((nelmod playlist.sequence jump).code /= (nelmod st.playlist.sequence st.jump).code)
+            )
+            do
+              Log.info "rendering"
+              H.modify_ _
+                { pos = pos
+                , cursor = cursor
+                , jump = jump
+                , playlist = playlist
+                , isEditable = isEditable
+                , isInErrorState = isInErrorState
+                }
     , pauseScroll: const do
         H.raise (inj (Proxy :: _ "pauseScroll") unit)
     }
+
+{-HH.pre
+( [ classes [ "language-purescript" ]
+  ] <> case i.isEditable of
+    T.YourError -> []
+    T.OurError -> []
+    _ ->
+      [ HE.onClick $ const
+          (inj (Proxy :: _ "pauseScroll") unit)
+      ]
+)
+[ HH.code
+    [ HP.attr (H.AttrName "contenteditable")
+        ( case i.isEditable of
+            T.Loading -> "false"
+            _ -> "true"
+        )
+    , classes [ "language-purescript" ]
+    , HP.ref (H.RefLabel $ "code")
+    ]
+    [ HH.text $ fromMaybe' (\_ -> asMain (nelmod i.playlist.sequence i.jump).code)
+        ( case i.isEditable of
+            T.YourError -> i.lastQueriedCode
+            T.OurError -> i.lastQueriedCode
+            _ -> Nothing
+        )
+    ]
+]-}

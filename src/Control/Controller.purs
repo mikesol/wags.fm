@@ -24,7 +24,6 @@ import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Aff (error, launchAff_, makeAff, try)
 import Effect.Class (liftEffect)
-import Effect.Class.Console as Log
 import Effect.Exception (Error)
 import Effect.Ref (new, read, write)
 import FRP.Behavior (Behavior, behavior)
@@ -33,6 +32,7 @@ import FRP.Event as Event
 import Foreign (Foreign)
 import Foreign.Index (readProp)
 import JIT.API as API
+import JIT.Loader (Loader)
 import JIT.Compile (compile)
 import JIT.EvalSources (evalSources)
 import Types as T
@@ -114,6 +114,7 @@ type PlayScrollSig =
   , compileOnPlay ::
       Maybe
         { code :: String
+        , loader :: Loader
         , cleanErrorState :: Effect Unit
         , setCurrentPlaylist :: SetPlaylist
         , ourFaultErrorCallback :: Error -> Effect Unit
@@ -210,7 +211,7 @@ playScroll
     nea' = nel2nea currentPlaylist
   in
     when (isResumable scrollState) $ launchAff_ do
-      Log.info "playing scroll"
+      -- Log.info "playing scroll"
       for_ compileOnPlay (liftEffect <<< _.cleanErrorState)
       nea__ <- (map <<< map) (al <<< NEA.toNonEmpty) $
         compileOnPlay # maybe (pure (Just nea'))
@@ -218,17 +219,18 @@ playScroll
            , setCurrentPlaylist
            , ourFaultErrorCallback
            , yourFaultErrorCallback
+           , loader
            } -> makeAff \cb -> do
             setScrollState T.Loading
             compile
               { code
-              , loaderUrl
+              , loader
               , compileUrl
               , ourFaultErrorCallback: \err -> do
                   ourFaultErrorCallback err
                   cb $ Left err
               , yourFaultErrorCallback: \err -> do
-                  Log.info "executing yfec"
+                  -- Log.info "executing yfec"
                   yourFaultErrorCallback err
                   cb $ Right Nothing
               , successCallback: \{ js } -> do
@@ -256,7 +258,7 @@ playScroll
               }
             mempty
       for_ nea__ \nea -> do
-        Log.info "Starting scroll again"
+        -- Log.info "Starting scroll again"
         -- we move the cursor back one tick if we are compiling
         -- as we want to stay on that example a while and hear
         -- our beautiful creation!!
@@ -290,7 +292,7 @@ playWags
   , setAudioContext
   } =
   when (not isPlaying) do
-    Log.info "playing wags"
+    -- Log.info "playing wags"
     -- set is playing immediately
     -- note that we may want to pass a cancellation for the aff to avoid a race condition
     -- where the turn-off functionality is not set yet
