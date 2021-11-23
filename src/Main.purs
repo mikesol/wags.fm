@@ -98,7 +98,7 @@ component =
               , audioContext
               } <- H.get
               bufferCache <- H.get >>= _.bufferCache >>> maybe (H.liftEffect (Ref.new Map.empty)) pure
-              Log.info "Setting yfec"
+              Log.info ("Setting yfec" <> show scrollState)
               for_ audioContext \ctx -> H.liftEffect $ C.playScroll
                 { cursor
                 , setCursor: listener <<< inj (Proxy :: _ "setCursor")

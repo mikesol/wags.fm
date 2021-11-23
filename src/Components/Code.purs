@@ -2,9 +2,8 @@ module Components.Code where
 
 import Prelude
 
-import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, infinite, iterationCount, left, normalAnimationDirection, pct, sec)
+import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, iterationCount, left, normalAnimationDirection, pct, sec)
 import Data.Array (intercalate)
-import Data.Foldable (traverse_)
 import Data.Functor.Variant as VF
 import Data.Maybe (Maybe(..), fromMaybe', maybe)
 import Data.Newtype (unwrap)
@@ -100,12 +99,14 @@ component =
     { pos
     , cursor
     , playlist
+    , jump
     , scrollState
     } =
     { pos
     , cursor
     , playlist
     , scrollState
+    , jump
     , lastQueriedCode: Nothing
     }
 
@@ -141,7 +142,7 @@ component =
                 , classes [ "language-purescript" ]
                 , HP.ref (H.RefLabel $ "code")
                 ]
-                [ HH.text $ fromMaybe' (\_ -> asMain (nelmod i.playlist.sequence jump).code)
+                [ HH.text $ fromMaybe' (\_ -> asMain (nelmod i.playlist.sequence i.jump).code)
                     ( case i.scrollState of
                         T.YourError -> i.lastQueriedCode
                         T.OurError -> i.lastQueriedCode
@@ -151,7 +152,6 @@ component =
             ]
         ]
       where
-      jump = (((i.cursor + (i.pos + 1)) / 4) * 4) - i.pos
       cMod = (i.cursor + i.pos) `mod` 4
 
   handleQuery :: forall a. T.CodeQuery a -> HalogenM T.CodeState T.CodeAction Slots T.CodeOutput m (Maybe a)
@@ -171,6 +171,7 @@ component =
     { input:
         \{ pos
          , cursor
+         , jump
          , playlist
          , scrollState
          } -> do
@@ -178,6 +179,7 @@ component =
           H.modify_ _
             { pos = pos
             , cursor = cursor
+            , jump = jump
             , playlist = playlist
             , scrollState = scrollState
             }

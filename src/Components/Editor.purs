@@ -2,7 +2,7 @@ module Components.Editor where
 
 import Prelude
 
-import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, infinite, iterationCount, left, normalAnimationDirection, pct, sec)
+import CSS (CSS, TimingFunction(..), animation, forwards, fromString, infinite, normalAnimationDirection, sec)
 import Components.Code as Code
 import Components.ErrorModal as EM
 import Control.Plus (empty)
@@ -20,17 +20,15 @@ import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.CSS as CSS
 import Halogen.HTML.Events as HE
-import Halogen.HTML.Properties as HP
 import Halogen.Subscription as HS
 import JIT.API as API
-import Nonbili.DOM (innerText)
 import Record as R
 import SVGIcons as SVGIcons
 import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
 import Types (CodeQuery(..))
 import Types as T
-import Util (classes, nelmod)
+import Util (classes)
 
 showPlayer
   :: forall r
@@ -74,13 +72,9 @@ asMain = intercalate "\n"
     )
   <<< String.split (String.Pattern "\n")
 
-data CodeSlot = CS0 | CS1 | CS2 | CS3
-
-derive instance eqCodeSlot :: Eq CodeSlot
-derive instance ordCodeSlot :: Ord CodeSlot
 type Slots =
   ( modal :: forall query. H.Slot query T.ModalOutput Unit
-  , code :: H.Slot T.CodeQuery T.CodeOutput CodeSlot
+  , code :: H.Slot T.CodeQuery T.CodeOutput Int
   )
 
 compileErrorsToString :: Array API.CompilerError -> String
@@ -88,6 +82,9 @@ compileErrorsToString = intercalate "\n" <<< map \err ->
   maybe "" (\position -> "On line " <> show position.startLine <> ":\n") (toMaybe err.position)
     <> err.message
     <> "\n\n"
+
+mjump :: Int -> Int -> Int
+mjump cursor pos = (((cursor + (pos + 1)) / 4) * 4) - pos
 
 component :: forall q m. MonadEffect m => H.Component q T.EditorInput T.EditorOutput m
 component =
@@ -162,18 +159,30 @@ component =
               codeBase = { cursor: i.cursor, playlist: i.playlist, scrollState }
             in
               [ HH.div [ classes [ "relative", "flex-grow" ] ]
-                  [ HH.slot (Proxy :: _ "code") CS0 Code.component
-                      (R.union codeBase { pos: 0 })
-                      (inj (Proxy :: _ "handleCodeOutput"))
-                  , HH.slot (Proxy :: _ "code") CS1 Code.component
-                      (R.union codeBase { pos: 1 })
-                      (inj (Proxy :: _ "handleCodeOutput"))
-                  , HH.slot (Proxy :: _ "code") CS2 Code.component
-                      (R.union codeBase { pos: 2 })
-                      (inj (Proxy :: _ "handleCodeOutput"))
-                  , HH.slot (Proxy :: _ "code") CS3 Code.component
-                      (R.union codeBase { pos: 3 })
-                      (inj (Proxy :: _ "handleCodeOutput"))
+                  [ let
+                      jump = mjump i.cursor 0
+                    in
+                      HH.slot (Proxy :: _ "code") jump Code.component
+                        (R.union codeBase { pos: 0, jump })
+                        (inj (Proxy :: _ "handleCodeOutput"))
+                  , let
+                      jump = mjump i.cursor 1
+                    in
+                      HH.slot (Proxy :: _ "code") jump Code.component
+                        (R.union codeBase { pos: 1, jump })
+                        (inj (Proxy :: _ "handleCodeOutput"))
+                  , let
+                      jump = mjump i.cursor 2
+                    in
+                      HH.slot (Proxy :: _ "code") jump Code.component
+                        (R.union codeBase { pos: 2, jump })
+                        (inj (Proxy :: _ "handleCodeOutput"))
+                  , let
+                      jump = mjump i.cursor 3
+                    in
+                      HH.slot (Proxy :: _ "code") jump Code.component
+                        (R.union codeBase { pos: 3, jump })
+                        (inj (Proxy :: _ "handleCodeOutput"))
                   ]
               ]
                 <>
@@ -292,15 +301,10 @@ component =
           }
     , resumeScroll: const do
         { cursor, listener } <- H.get
-        let
-          curCode = case (4 - (cursor `mod` 4)) `mod` 4 of
-            0 -> CS0
-            1 -> CS1
-            2 -> CS2
-            _ -> CS3
         code <- H.request (Proxy :: _ "code")
-          curCode
+          cursor
           (CodeQuery <<< VF.inj (Proxy :: _ "getCode"))
+        Log.info (code # maybe "did not get code" (append "got code: "))
         code # traverse_
           ( H.raise <<< playScroll <<<
               { code: _

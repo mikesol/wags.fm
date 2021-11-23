@@ -3,25 +3,28 @@ module Types where
 import Prelude
 
 import Data.Functor.Variant (VariantF)
+import Data.Generic.Rep (class Generic)
 import Data.List.Types (NonEmptyList)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
+import Data.Show.Generic (genericShow)
 import Data.Time.Duration (Milliseconds)
 import Data.Variant (Variant)
 import Effect (Effect)
 import Effect.Exception (Error)
 import Effect.Ref (Ref)
-import Halogen.Component as H
-import Halogen.HTML as HH
 import Halogen.Query.HalogenM (SubscriptionId)
 import JIT.API as API
-import Type.Proxy (Proxy(..))
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Types (SampleCache)
 import WAGS.WebAPI (AudioContext)
 
 type Cursor = Int
 data ScrollState = Scrolling | Paused | Loading | YourError | OurError
+
+derive instance genericScrollState :: Generic ScrollState _
+instance showScrollState :: Show ScrollState where
+  show = genericShow
 
 type PlaylistSequence = NonEmptyList
   { duration :: Milliseconds
@@ -36,16 +39,20 @@ type Playlist =
 
 type CodeInput =
   { pos :: Int
+  , jump :: Int
   , cursor :: Int
   , playlist :: Playlist
   , scrollState :: ScrollState
   }
+
 newtype CodeQuery a = CodeQuery (VariantF (getCode :: (->) String) a)
+
 derive instance newtypeCodeQuery :: Newtype (CodeQuery a) _
 type CodeOutput = Variant (pauseScroll :: Unit)
 type CodeAction = Variant (pauseScroll :: Unit, input :: CodeInput)
 type CodeState =
   { pos :: Int
+  , jump :: Int
   , cursor :: Int
   , playlist :: Playlist
   , scrollState :: ScrollState

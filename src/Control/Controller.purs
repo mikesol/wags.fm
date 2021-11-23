@@ -187,9 +187,11 @@ nel2nea a = NEA.fromNonEmpty (h :| Array.fromFoldable t)
   where
   h :| t = unwrap a
 
-isPaused :: T.ScrollState -> Boolean
-isPaused T.Paused = true
-isPaused _ = false
+isResumable :: T.ScrollState -> Boolean
+isResumable T.Paused = true
+isResumable T.YourError = true
+isResumable T.OurError = true
+isResumable _ = false
 
 playScroll :: PlayScrollSig
 playScroll
@@ -207,7 +209,7 @@ playScroll
   let
     nea' = nel2nea currentPlaylist
   in
-    when (isPaused scrollState) $ launchAff_ do
+    when (isResumable scrollState) $ launchAff_ do
       Log.info "playing scroll"
       for_ compileOnPlay (liftEffect <<< _.cleanErrorState)
       nea__ <- (map <<< map) (al <<< NEA.toNonEmpty) $

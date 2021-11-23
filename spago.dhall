@@ -41,6 +41,7 @@
   , "psci-support"
   , "quickcheck"
   , "random"
+  , "record"
   , "refs"
   , "simple-json"
   , "sized-vectors"
