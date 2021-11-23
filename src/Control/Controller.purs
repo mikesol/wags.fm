@@ -22,7 +22,7 @@ import Data.NonEmpty (NonEmpty, (:|))
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
-import Effect.Aff (error, launchAff_, makeAff)
+import Effect.Aff (error, launchAff_, makeAff, try)
 import Effect.Class (liftEffect)
 import Effect.Class.Console as Log
 import Effect.Exception (Error)
@@ -35,7 +35,6 @@ import Foreign.Index (readProp)
 import JIT.API as API
 import JIT.Compile (compile)
 import JIT.EvalSources (evalSources)
-import Simple.JSON as JSON
 import Types as T
 import Unsafe.Coerce (unsafeCoerce)
 import WAGS.Interpret (close, constant0Hack, context, contextResume, contextState, makeFFIAudioSnapshot)
@@ -67,8 +66,8 @@ type SetPlaylist = T.PlaylistSequence -> Effect Unit
 type Cursor = Int
 type SetCursor = Int -> Effect Unit
 ----------
-type IsScrolling = Boolean
-type SetIsScrolling = Boolean -> Effect Unit
+type ScrollState = T.ScrollState
+type SetScrollState = T.ScrollState -> Effect Unit
 ----------
 type IsPlaying = Boolean
 type SetIsPlaying = Boolean -> Effect Unit
@@ -85,7 +84,7 @@ type SetNewWagPush = (AFuture -> Effect Unit) -> Effect Unit
 type PauseScrollSig =
   { stopScrolling :: StopScrolling
   , setStopScrolling :: SetStopScrolling
-  , setIsScrolling :: SetIsScrolling
+  , setScrollState :: SetScrollState
   }
   -> Effect Unit
 
@@ -94,7 +93,7 @@ type PauseScrollSig =
 type StopWagsSig =
   { stopScrolling :: StopScrolling
   , setStopScrolling :: SetStopScrolling
-  , setIsScrolling :: SetIsScrolling
+  , setScrollState :: SetScrollState
   , setIsPlaying :: SetIsPlaying
   , stopWags :: StopWags
   , setCursor :: SetCursor
@@ -108,8 +107,8 @@ type PlayScrollSig =
   { cursor :: Cursor
   , setStopScrolling :: SetStopScrolling
   , setCursor :: SetCursor
-  , isScrolling :: IsScrolling
-  , setIsScrolling :: SetIsScrolling
+  , scrollState :: ScrollState
+  , setScrollState :: SetScrollState
   , newWagPush :: NewWagPush
   , currentPlaylist :: T.PlaylistSequence
   , compileOnPlay ::
@@ -133,7 +132,7 @@ type PlayWagsSig =
   , setStopScrolling :: SetStopScrolling
   , setCursor :: SetCursor
   , setNewWagPush :: SetNewWagPush
-  , setIsScrolling :: SetIsScrolling
+  , setScrollState :: SetScrollState
   , setAudioContext :: SetAudioContext
   , isPlaying :: IsPlaying
   , bufferCache :: BufferCache
@@ -151,7 +150,7 @@ readableToBehavior r = behavior \e ->
 
 stopWags :: StopWagsSig
 stopWags
-  { setIsScrolling
+  { setScrollState
   , setIsPlaying
   , stopScrolling
   , setStopScrolling
@@ -159,7 +158,7 @@ stopWags
   , stopWags: sw
   , setStopWags
   } =
-  setIsScrolling false
+  setScrollState T.Paused
     *> setIsPlaying false
     *> setCursor (-1)
     *> stopScrolling
@@ -168,8 +167,12 @@ stopWags
     *> setStopWags (pure unit)
 
 pauseScroll :: PauseScrollSig
-pauseScroll { setIsScrolling, stopScrolling, setStopScrolling } =
-  setIsScrolling false *> stopScrolling *> setStopScrolling (pure unit)
+pauseScroll { setScrollState, stopScrolling, setStopScrolling } =
+  setScrollState T.Paused
+    *> stopScrolling
+    -- as we are paused, we rewind the cursor by one to make sure
+    -- that we don't advance the cursor when we resume
+    *> setStopScrolling (pure unit)
 
 al :: NonEmpty Array ~> NonEmpty List
 al (a :| b) = a :| (List.fromFoldable b)
@@ -184,12 +187,16 @@ nel2nea a = NEA.fromNonEmpty (h :| Array.fromFoldable t)
   where
   h :| t = unwrap a
 
+isPaused :: T.ScrollState -> Boolean
+isPaused T.Paused = true
+isPaused _ = false
+
 playScroll :: PlayScrollSig
 playScroll
   { cursor
   , setCursor
-  , isScrolling
-  , setIsScrolling
+  , scrollState
+  , setScrollState
   , setStopScrolling
   , newWagPush
   , audioContext
@@ -200,15 +207,17 @@ playScroll
   let
     nea' = nel2nea currentPlaylist
   in
-    when (not isScrolling) $ launchAff_ do
+    when (isPaused scrollState) $ launchAff_ do
+      Log.info "playing scroll"
       for_ compileOnPlay (liftEffect <<< _.cleanErrorState)
-      nea <- map (al <<< NEA.toNonEmpty) $
-        compileOnPlay # maybe (pure nea')
+      nea__ <- (map <<< map) (al <<< NEA.toNonEmpty) $
+        compileOnPlay # maybe (pure (Just nea'))
           \{ code
            , setCurrentPlaylist
            , ourFaultErrorCallback
            , yourFaultErrorCallback
            } -> makeAff \cb -> do
+            setScrollState T.Loading
             compile
               { code
               , loaderUrl
@@ -217,8 +226,9 @@ playScroll
                   ourFaultErrorCallback err
                   cb $ Left err
               , yourFaultErrorCallback: \err -> do
+                  Log.info "executing yfec"
                   yourFaultErrorCallback err
-                  cb $ Left $ error $ JSON.writeJSON err
+                  cb $ Right Nothing
               , successCallback: \{ js } -> do
                   wag' <- liftEffect $ evalSources js
                     >>= runExceptT <<< readProp "wag"
@@ -228,28 +238,39 @@ playScroll
                     newNea = fromMaybe nea' $ NEA.modifyAt (cursor `mod` NEA.length nea')
                       (_ { wag = wag, code = code })
                       nea'
-                  Log.info "successfully processed js"
                   launchAff_ do
-                    Log.info "doing downloads"
-                    doDownloads' audioContext bufferCache mempty identity wag
-                    let newNel = nea2nel newNea
-                    liftEffect $ setCurrentPlaylist $ newNel
-                    Log.info "calling callback"
-                    liftEffect $ cb $ Right newNea
+                    res <- try do
+                      doDownloads' audioContext bufferCache mempty identity wag
+                      let newNel = nea2nel newNea
+                      liftEffect $ setCurrentPlaylist $ newNel
+                      liftEffect $ cb $ Right (Just newNea)
+                    case res of
+                      Left err -> do
+                        liftEffect do
+                          ourFaultErrorCallback err
+                          setScrollState T.Paused
+                          cb $ Left err
+                      Right x -> pure x
               }
             mempty
-      liftEffect do
-        pg <- new cursor
-        stopScrolling <- subscribe
-          (loopEmitter (_.duration >>> unwrap >>> round) $ nea)
-          \{ wag } -> do
-            pg' <- read pg
-            let np = pg' + 1
-            setCursor np
-            write np pg
-            newWagPush wag
-        setIsScrolling true
-        setStopScrolling stopScrolling
+      for_ nea__ \nea -> do
+        Log.info "Starting scroll again"
+        -- we move the cursor back one tick if we are compiling
+        -- as we want to stay on that example a while and hear
+        -- our beautiful creation!!
+        let effectiveCursor = cursor - (maybe 0 (const 1) compileOnPlay)
+        liftEffect do
+          pg <- new effectiveCursor
+          stopScrolling <- subscribe
+            (loopEmitter (_.duration >>> unwrap >>> round) (effectiveCursor + 1) $ nea)
+            \{ wag } -> do
+              pg' <- read pg
+              let np = pg' + 1
+              setCursor np
+              write np pg
+              newWagPush wag
+          setScrollState T.Scrolling
+          setStopScrolling stopScrolling
 
 playWags :: PlayWagsSig
 playWags
@@ -257,7 +278,7 @@ playWags
   , stopScrolling
   , setStopScrolling
   , setCursor
-  , setIsScrolling
+  , setScrollState
   , setNewWagPush
   , isPlaying
   , setIsPlaying
@@ -267,6 +288,7 @@ playWags
   , setAudioContext
   } =
   when (not isPlaying) do
+    Log.info "playing wags"
     -- set is playing immediately
     -- note that we may want to pass a cancellation for the aff to avoid a race condition
     -- where the turn-off functionality is not set yet
@@ -304,8 +326,8 @@ playWags
           , setCursor
           , audioContext: audioCtx
           , bufferCache
-          , isScrolling: false
-          , setIsScrolling
+          , scrollState: T.Paused
+          , setScrollState
           , setStopScrolling
           , newWagPush: push
           , currentPlaylist

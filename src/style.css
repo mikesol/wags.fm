@@ -2,59 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* css.gg */
-
-/* play */
-.gg-play-button-o {
-	box-sizing: border-box;
-	position: relative;
-	display: block;
-	transform: scale(1);
-	width: 22px;
-	height: 22px;
-	border: 2px solid;
-	border-radius: 20px;
-}
-
-.gg-play-button-o::before {
-	content: "";
-	display: block;
-	box-sizing: border-box;
-	position: absolute;
-	width: 0;
-	height: 10px;
-	border-top: 5px solid transparent;
-	border-bottom: 5px solid transparent;
-	border-left: 6px solid;
-	top: 4px;
-	left: 7px;
-}
-
-/* stop */
-.gg-play-stop-o {
-	box-sizing: border-box;
-	position: relative;
-	display: block;
-	transform: scale(var(--ggs, 1));
-	width: 22px;
-	height: 22px;
-	border: 2px solid;
-	border-radius: 20px;
-}
-
-.gg-play-stop-o::before {
-	content: "";
-	display: block;
-	box-sizing: border-box;
-	position: absolute;
-	width: 6px;
-	height: 6px;
-	top: 6px;
-	left: 6px;
-	background: currentColor;
-}
-
-/* -------- */
+/* ---animations----- */
 /* -------- */
 /* -------- */
 /* -------- */
@@ -110,5 +58,12 @@
 	}
 	to {
 		left: -150%;
+	}
+}
+
+@keyframes spin {
+	100% {
+		-webkit-transform: rotate(360deg);
+		transform: rotate(360deg);
 	}
 }

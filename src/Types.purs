@@ -7,18 +7,19 @@ import Data.Maybe (Maybe)
 import Data.Time.Duration (Milliseconds)
 import Data.Variant (Variant)
 import Effect (Effect)
+import Effect.Exception (Error)
 import Effect.Ref (Ref)
+import Halogen.Component as H
+import Halogen.HTML as HH
 import Halogen.Query.HalogenM (SubscriptionId)
-import Type.Function (type ($))
-import Type.Row (type (+))
+import JIT.API as API
+import Type.Proxy (Proxy(..))
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Types (SampleCache)
 import WAGS.WebAPI (AudioContext)
 
------------
--- nouns
-
 type Cursor = Int
+data ScrollState = Scrolling | Paused | Loading | YourError | OurError
 
 type PlaylistSequence = NonEmptyList
   { duration :: Milliseconds
@@ -34,13 +35,17 @@ type Playlist =
 type EditorInput =
   { playlist :: Playlist
   , cursor :: Cursor
-  , isScrolling :: Boolean
+  , scrollState :: ScrollState
   }
 
 type EditorState =
   { playlist :: Playlist
+  , unsubscribeFromHalogen :: Maybe SubscriptionId
+  , listener :: EditorAction -> Effect Unit
+  , mostRecentCompileErrors :: Array API.CompilerError
   , cursor :: Cursor
-  , isScrolling :: Boolean
+  , modalShowable :: Maybe ModalInput
+  , scrollState :: ScrollState
   }
 
 type MainState =
@@ -48,7 +53,7 @@ type MainState =
   , listener :: MainAction -> Effect Unit
   , cursor :: Int
   , stopScrolling :: Effect Unit
-  , isScrolling :: Boolean
+  , scrollState :: ScrollState
   , isPlaying :: Boolean
   , bufferCache :: Maybe (Ref SampleCache)
   , unsubscribeFromHalogen :: Maybe SubscriptionId
@@ -58,11 +63,81 @@ type MainState =
   , newWagPush :: AFuture -> Effect Unit
   }
 
+type ModalAction = Variant (close :: Unit)
+type ModalInput =
+  { text :: String
+  , title :: String
+  , code :: Maybe String
+  }
+
+type ModalOutput = Variant (closeMe :: Unit)
+type ModalState =
+  { text :: String
+  , title :: String
+  , code :: Maybe String
+  }
+
+----
+type EditorAction = Variant
+  ( pauseScroll :: Unit
+  , initialize :: Unit
+  , setMostRecentCompileErrors :: Array API.CompilerError
+  , showPlayer :: Unit
+  , resumeScroll :: Unit
+  , somethingWentWrong :: Unit
+  , input :: EditorInput
+  , showCompileError :: Unit
+  , handleModalOutput :: ModalOutput
+  )
+
+type PlayScrollInfo =
+  { code :: String
+  , ourFaultErrorCallback :: Error -> Effect Unit
+  , yourFaultErrorCallback :: Array API.CompilerError -> Effect Unit
+  }
+
+type EditorOutput = Variant
+  ( playScroll :: PlayScrollInfo
+  , editorInErrorState :: Unit
+  , editorReceivedCompileError :: Unit
+  , pauseScroll :: Unit
+  , showPlayer :: Unit
+  )
+
+type MainAction = Variant
+  ( initialize :: Unit
+  , handlePlayerOutput :: PlayerOutput
+  , setIsPlaying :: Boolean
+  , setAudioContext :: AudioContext
+  , setCursor :: Int
+  , setCurrentPlaylist :: PlaylistSequence
+  , handleEditorOutput :: EditorOutput
+  , setScrollState :: ScrollState
+  , setStopWags :: Effect Unit
+  , setNewWagPush :: AFuture -> Effect Unit
+  , setStopScrolling :: Effect Unit
+  )
+
+type PlayerAction = Variant
+  ( input :: PlayerInput
+  , choosePlaylist :: Playlist
+  , pressPlay :: Unit
+  , pressStop :: Unit
+  , hidePlayer :: Unit
+  )
+
 type PlayerInput =
   { playlist :: Playlist
   , isPlaying :: Boolean
   , isHidden :: Boolean
   }
+
+type PlayerOutput = Variant
+  ( choosePlaylist :: Playlist
+  , pressPlay :: Unit
+  , pressStop :: Unit
+  , hidePlayer :: Unit
+  )
 
 type PlayerState =
   { playlist :: Playlist
@@ -71,70 +146,3 @@ type PlayerState =
   , hasPlayedOnce :: Boolean
   , hasHiddenOnce :: Boolean
   }
-
------------
--- verbs
-type ChoosePlaylist r = (choosePlaylist :: Playlist | r)
-type HandleEditorInput r = (input :: EditorInput | r)
-type Initialize r = (initialize :: Unit | r)
-type HandleEditorOutput r = (handleEditorOutput :: EditorOutput | r)
-type HandlePlayerInput r = (input :: PlayerInput | r)
-type HandlePlayerOutput r = (handlePlayerOutput :: PlayerOutput | r)
-type HidePlayer r = (hidePlayer :: Unit | r)
-type PauseScroll r = (pauseScroll :: Unit | r)
-type PlayScroll r = (playScroll :: String | r)
-type PressPlay r = (pressPlay :: Unit | r)
-type PressStop r = (pressStop :: Unit | r)
-type ResumeScroll r = (resumeScroll :: Unit | r)
-type SetAudioContext r = (setAudioContext :: AudioContext | r)
-type SetCurrentPlaylist r = (setCurrentPlaylist :: PlaylistSequence | r)
-type SetCursor r = (setCursor :: Int | r)
-type SetIsPlaying r = (setIsPlaying :: Boolean | r)
-type SetIsScrolling r = (setIsScrolling :: Boolean | r)
-type SetNewWagPush r = (setNewWagPush :: AFuture -> Effect Unit | r)
-type SetStopScrolling r = (setStopScrolling :: Effect Unit | r)
-type SetStopWags r = (setStopWags :: Effect Unit | r)
-type ShowPlayer r = (showPlayer :: Unit | r)
-
-----
-type EditorAction = Variant
-  $ HandleEditorInput
-  + PauseScroll
-  + ResumeScroll
-  + ShowPlayer
-  + ()
-
-type EditorOutput = Variant
-  $ PauseScroll
-  + PlayScroll
-  + ShowPlayer
-  + ()
-
-type MainAction = Variant
-  $ HandlePlayerOutput
-  + HandleEditorOutput
-  + Initialize
-  + SetAudioContext
-  + SetCurrentPlaylist
-  + SetCursor
-  + SetIsPlaying
-  + SetIsScrolling
-  + SetNewWagPush
-  + SetStopScrolling
-  + SetStopWags
-  + ()
-
-type PlayerAction = Variant
-  $ ChoosePlaylist
-  + HandlePlayerInput
-  + HidePlayer
-  + PressPlay
-  + PressStop
-  + ()
-
-type PlayerOutput = Variant
-  $ ChoosePlaylist
-  + HidePlayer
-  + PressPlay
-  + PressStop
-  + ()

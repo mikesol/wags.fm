@@ -32,6 +32,7 @@
   , "newtype"
   , "nonbili-dom"
   , "nonempty"
+  , "nullable"
   , "ordered-collections"
   , "parallel"
   , "prelude"

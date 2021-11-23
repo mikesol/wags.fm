@@ -11,6 +11,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Variant (inj, match)
 import Effect (Effect)
 import Effect.Class (class MonadEffect)
+import Effect.Class.Console as Log
 import Effect.Ref as Ref
 import Halogen (HalogenM)
 import Halogen as H
@@ -51,7 +52,7 @@ component =
     , cursor: -1
     , stopWags: mempty
     , stopScrolling: mempty
-    , isScrolling: false
+    , scrollState: T.Paused
     , isPlaying: false
     , newWagPush: mempty
     , bufferCache: Nothing
@@ -61,12 +62,12 @@ component =
     , audioContext: Nothing
     }
 
-  render { cursor, playlist, isPlaying, playerIsHidden, isScrolling } =
+  render { cursor, playlist, isPlaying, playerIsHidden, scrollState } =
     HH.div [ classes [ "w-screen", "h-screen" ] ]
       [ HH.slot _editor unit Editor.component
           { cursor
           , playlist
-          , isScrolling
+          , scrollState
           }
           (inj (Proxy :: _ "handleEditorOutput"))
       , HH.slot _player unit Player.component
@@ -84,43 +85,53 @@ component =
     { handleEditorOutput: match
         { showPlayer: const do
             H.modify_ _ { playerIsHidden = false }
-        , playScroll: \code -> do
-            { cursor
-            , listener
-            , newWagPush
-            , isScrolling
-            , playlist
-            , audioContext
-            } <- H.get
-            bufferCache <- H.get >>= _.bufferCache >>> maybe (H.liftEffect (Ref.new Map.empty)) pure
-            for_ audioContext \ctx -> H.liftEffect $ C.playScroll
+        , playScroll:
+            \{ code
+             , ourFaultErrorCallback
+             , yourFaultErrorCallback
+             } -> do
               { cursor
-              , setCursor: listener <<< inj (Proxy :: _ "setCursor")
-              , isScrolling
-              , setIsScrolling: listener <<< inj (Proxy :: _ "setIsScrolling")
-              , setStopScrolling: listener <<< inj (Proxy :: _ "setStopScrolling")
+              , listener
               , newWagPush
-              , audioContext: ctx
-              , compileOnPlay: Just
-                  { code
-                  , cleanErrorState: mempty
-                  , setCurrentPlaylist: listener <<< inj (Proxy :: _ "setCurrentPlaylist")
-                  , ourFaultErrorCallback: mempty
-                  , yourFaultErrorCallback: mempty
-                  }
-              , bufferCache:
-                  { read: Ref.read bufferCache
-                  , write: flip Ref.write bufferCache
-                  }
-              , currentPlaylist: playlist.sequence
-              }
+              , scrollState
+              , playlist
+              , audioContext
+              } <- H.get
+              bufferCache <- H.get >>= _.bufferCache >>> maybe (H.liftEffect (Ref.new Map.empty)) pure
+              Log.info "Setting yfec"
+              for_ audioContext \ctx -> H.liftEffect $ C.playScroll
+                { cursor
+                , setCursor: listener <<< inj (Proxy :: _ "setCursor")
+                , scrollState
+                , setScrollState: listener <<< inj (Proxy :: _ "setScrollState")
+                , setStopScrolling: listener <<< inj (Proxy :: _ "setStopScrolling")
+                , newWagPush
+                , audioContext: ctx
+                , compileOnPlay: Just
+                    { code
+                    , cleanErrorState: mempty
+                    , setCurrentPlaylist: listener <<< inj (Proxy :: _ "setCurrentPlaylist")
+                    , ourFaultErrorCallback
+                    , yourFaultErrorCallback
+                    }
+                , bufferCache:
+                    { read: Ref.read bufferCache
+                    , write: flip Ref.write bufferCache
+                    }
+                , currentPlaylist: playlist.sequence
+                }
         , pauseScroll: const do
             { listener, stopScrolling } <- H.get
             H.liftEffect $ C.pauseScroll
               { stopScrolling
               , setStopScrolling: listener <<< inj (Proxy :: _ "setStopScrolling")
-              , setIsScrolling: listener <<< inj (Proxy :: _ "setIsScrolling")
+              , setScrollState: listener <<< inj (Proxy :: _ "setScrollState")
               }
+        , editorInErrorState: const do
+            H.modify_ _ { scrollState = T.OurError }
+        , editorReceivedCompileError: const do
+            Log.info "Got compile error"
+            H.modify_ _ { scrollState = T.YourError }
         }
     , handlePlayerOutput: match
         { pressPlay: const do
@@ -134,7 +145,7 @@ component =
               , setStopScrolling: listener <<< inj (Proxy :: _ "setStopScrolling")
               , setCursor: listener <<< inj (Proxy :: _ "setCursor")
               , setNewWagPush: listener <<< inj (Proxy :: _ "setNewWagPush")
-              , setIsScrolling: listener <<< inj (Proxy :: _ "setIsScrolling")
+              , setScrollState: listener <<< inj (Proxy :: _ "setScrollState")
               , setAudioContext: listener <<< inj (Proxy :: _ "setAudioContext")
               , isPlaying
               , bufferCache:
@@ -148,7 +159,7 @@ component =
         , pressStop: const do
             { listener, stopScrolling, stopWags } <- H.get
             H.liftEffect $ C.stopWags
-              { setIsScrolling: listener <<< inj (Proxy :: _ "setIsScrolling")
+              { setScrollState: listener <<< inj (Proxy :: _ "setScrollState")
               , setIsPlaying: listener <<< inj (Proxy :: _ "setIsPlaying")
               , stopScrolling
               , setStopScrolling: listener <<< inj (Proxy :: _ "setStopScrolling")
@@ -178,8 +189,8 @@ component =
         H.modify_ _ { cursor = cursor }
     , setIsPlaying: \isPlaying -> do
         H.modify_ _ { isPlaying = isPlaying }
-    , setIsScrolling: \isScrolling -> do
-        H.modify_ _ { isScrolling = isScrolling }
+    , setScrollState: \scrollState -> do
+        H.modify_ _ { scrollState = scrollState }
     , setNewWagPush: \newWagPush -> do
         H.modify_ _ { newWagPush = newWagPush }
     , setStopScrolling: \stopScrolling -> do
