@@ -42,7 +42,8 @@ pressPlay = inj (Proxy :: _ "pressPlay") unit
 
 hidePlayer
   :: forall r
-   . { transitionTime :: Number } ->  Variant (hidePlayer :: { transitionTime :: Number } | r)
+   . { transitionTime :: Number }
+  -> Variant (hidePlayer :: { transitionTime :: Number } | r)
 hidePlayer = inj (Proxy :: _ "hidePlayer")
 
 pressStop
@@ -88,7 +89,10 @@ component =
           , "grid-rows-3"
           , "grid-cols-3"
           , "z-10"
-          , "bg-gradient-to-r","from-purple-400","via-pink-500","to-red-500"
+          , "bg-gradient-to-r"
+          , "from-purple-400"
+          , "via-pink-500"
+          , "to-red-500"
           ]
       , CSS.style do
           -- backgroundImage (url background)
@@ -221,7 +225,7 @@ component =
     , pressStop: const $ do
         H.raise pressStop
     , hidePlayer: const $ do
-        H.raise $ hidePlayer { transitionTime: 0.6}
+        H.raise $ hidePlayer { transitionTime: 0.6 }
     , choosePlaylist: \playlist -> do
         -- Log.info "choose playlist"
         H.raise pressStop
