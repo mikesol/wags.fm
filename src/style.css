@@ -87,3 +87,14 @@
         transform:rotate(360deg);
     }
 }
+
+@keyframes hideLoading {
+	from {
+		top: 0px;
+		visibility: visible;
+	}
+	to {
+		top: -100%;
+		visibility: hidden;
+	}
+}

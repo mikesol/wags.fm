@@ -5,6 +5,9 @@ import Prelude
 import Components.Editor as Editor
 import Components.Player as Player
 import Control.Controller as C
+import Halogen.HTML.CSS as CSS
+import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, right, ms, pct, sec)
+import CSS.Hack.Animation (AnimationPlayState(..), animation, forwards, infinite, iterationCount, normalAnimationDirection)
 import Data.Foldable (for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
@@ -88,6 +91,32 @@ component loader =
               }
           }
           (inj (Proxy :: _ "handlePlayerOutput"))
+      , HH.div
+          [ classes [ "absolute", "z-20", "w-full", "h-full", "bg-blue-300", "flex", "flex-row" ]
+          , CSS.style do
+              animation
+                (fromString "hideLoading")
+                (sec 1.0)
+                EaseInOut
+                (sec 2.0)
+                (iterationCount 1.0)
+                normalAnimationDirection
+                forwards
+                ARunning
+          ]
+          [ HH.div [ classes [ "flex-grow" ] ] []
+          , HH.div [ classes [ "flex-grow-0", "flex", "flex-col" ] ]
+              [ HH.div [ classes [ "flex-grow" ] ] []
+              , HH.div [ classes [ "flex-grow-0", "text-pink-400", "text-3xl", "text-center" ] ]
+                  [ HH.text "🎵🎸🎹🎻🥁🎤🎛️🎧"
+                  ]
+              , HH.div [ classes [ "flex-grow-0", "text-pink-400", "text-center" ] ]
+                  [ HH.text "...loading..."
+                  ]
+              , HH.div [ classes [ "flex-grow" ] ] []
+              ]
+          , HH.div [ classes [ "flex-grow" ] ] []
+          ]
       ]
 
   handleAction
