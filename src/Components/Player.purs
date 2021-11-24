@@ -214,7 +214,7 @@ component =
   handleAction = match
     { pressPlay: const $ do
         H.raise pressPlay
-        H.liftAff $ delay (Milliseconds 750.0)
+        H.liftAff $ delay (Milliseconds 400.0)
         { isPlaying, hiddenInstr: { hidden } } <- H.get
         when (isPlaying && not hidden) $ H.raise $ hidePlayer { transitionTime: 0.995 }
     , pressStop: const $ do
