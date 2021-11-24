@@ -8,7 +8,7 @@
 /.purs*
 /.psa*
 /.spago
-/dist/bundle.js
+/dist
 /scripts/.venv
 /src/PutThePastBehindUs/*.purs
 /src/Plumbing/Gopher.purs
