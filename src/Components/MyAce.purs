@@ -27,7 +27,6 @@ import Data.Tuple (Tuple(..))
 import Data.Variant as V
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Class.Console as Log
 import Effect.Ref as Ref
 import Effect.Timer (clearTimeout, setTimeout)
 import Halogen as H
@@ -136,7 +135,7 @@ component id = H.mkComponent
         pure (Just (reply contents))
 
     , setEditorContent: \(Tuple text next) -> do
-        Log.info ("Setting content " <> text)
+        -- Log.info ("Setting content " <> text)
         H.gets _.editor >>= traverse_ \editor -> H.liftEffect do
           current <- Editor.getValue editor
           when (text /= current) do
