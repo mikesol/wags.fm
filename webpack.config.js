@@ -13,7 +13,7 @@ module.exports = {
 		clean: true,
 	},
 	plugins: [
-		new HtmlWebpackPlugin({title:"wags.fm"}),
+		new HtmlWebpackPlugin({template:"index.html"}),
 	],
 	resolve: {
 		alias: {
