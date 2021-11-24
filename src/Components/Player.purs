@@ -152,17 +152,22 @@ component =
               , HH.div [ classes [ "flex-grow-0" ] ]
                   [ HH.div [ classes $ [ "p-3", "text-center" ] <> bgStyling ]
                       [ HH.div
-                          [ classes [ "cursor-pointer" ]
+                          [ classes [ "flex", "flex-row", "w-full" ]
                           ]
-                          [ icon
-                              ( ( if isPlaying then SVGIcons.stop
-                                  else SVGIcons.play
-                                ) 50 50
-                              )
-                              [ HE.onClick
-                                  $ const
-                                  $ if isPlaying then pressStop else pressPlay
+                          [ HH.div [ classes [ "flex-grow" ] ] []
+                          , HH.div [ classes [ "flex-grow-0" ], classes [ "cursor-pointer" ] ]
+                              [ icon
+                                  ( ( if isPlaying then SVGIcons.stop
+                                      else SVGIcons.play
+                                    ) 50 50
+                                  )
+                                  [
+                                   HE.onClick
+                                      $ const
+                                      $ if isPlaying then pressStop else pressPlay
+                                  ]
                               ]
+                          , HH.div [ classes [ "flex-grow" ] ] []
                           ]
                       , HH.div [] [ HH.text playlist.title ]
                       ]
