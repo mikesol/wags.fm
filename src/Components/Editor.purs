@@ -2,13 +2,14 @@ module Components.Editor where
 
 import Prelude
 
-import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, infinite, iterationCount, left, ms, normalAnimationDirection, pct, sec, width)
+import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, infinite, iterationCount, left, ms, normalAnimationDirection, pct, sec)
 import Components.ErrorModal as EM
 import Components.MyAce as MyAce
 import Control.Plus (empty)
 import Data.Array (intercalate, (..))
 import Data.Foldable (traverse_)
 import Data.Functor.Variant as VF
+import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
@@ -156,12 +157,10 @@ component =
               , "row-end-1"
               , "col-start-1"
               , "col-end-1"
-              , "flex"
-              , "flex-row"
               ]
           ]
           [ HH.div [ classesS "w-full p-3" ]
-              [ HH.div [ classesS "overflow-hidden h-2 mb-4 text-xs flex rounded bg-pink-200" ]
+              [ HH.div [ classesS "overflow-hidden h-2 mb-2 text-xs flex rounded bg-pink-200" ]
                   [ HH.div
                       [ classesS "shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500"
                       , CSS.style do
@@ -176,7 +175,9 @@ component =
                       ]
                       []
                   ]
+, HH.div [ classes ["text-pink-600"]][let plen = NEL.length playlist.sequence in HH.text $ intercalate " " $ map (\ix -> if cursor `mod` plen >= ix then "⬤" else "◯") (0 .. (plen - 1))]
               ]
+
           --HH.div [ classes [  ] ]
           --  [ HH.text (show (nelmod playlist.sequence cursor).duration) ]
           ]
