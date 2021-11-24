@@ -39,7 +39,7 @@ import Halogen.Subscription as HS
 import JIT.API (ErrorPosition)
 import Type.Proxy (Proxy(..))
 import Types as T
-import Util (classes)
+import Util (classesS)
 import Web.HTML (HTMLElement)
 
 type Slot = H.Slot T.MyAceQuery T.MyAceOutput
@@ -88,7 +88,7 @@ component id = H.mkComponent
     HH.div
       [ HP.ref $ H.RefLabel "ace"
       , HP.id ("code" <> show id)
-      , classes ["w-full", "h-full"]
+      , classesS "w-full h-full border-solid border-4 border-pink-700"
       , HE.onClick \_ -> (V.inj (Proxy :: _ "pauseScroll") unit)
       ]
       []
@@ -172,7 +172,7 @@ setupEditor element = do
   Editor.setTheme "ace/theme/cobalt" editor
 
   renderer <- Editor.getRenderer editor
-  Renderer.setShowGutter true renderer
+  Renderer.setShowGutter false renderer
 
   session <- H.liftEffect $ Editor.getSession editor
   EditSession.setMode "ace/mode/haskell" session

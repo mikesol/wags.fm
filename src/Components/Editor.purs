@@ -2,7 +2,8 @@ module Components.Editor where
 
 import Prelude
 
-import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, infinite, iterationCount, left, ms, normalAnimationDirection, pct, sec)
+import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, ms, pct, sec)
+import CSS.Hack.Animation (AnimationPlayState(..), animation, forwards, infinite, iterationCount, normalAnimationDirection)
 import Components.ErrorModal as EM
 import Components.MyAce as MyAce
 import Control.Plus (empty)
@@ -63,6 +64,7 @@ spin = animation
   infinite
   normalAnimationDirection
   forwards
+  ARunning
 
 flyIn :: CSS
 flyIn = animation
@@ -73,6 +75,7 @@ flyIn = animation
   (iterationCount 1.0)
   normalAnimationDirection
   forwards
+  ARunning
 
 flyOut :: CSS
 flyOut = animation
@@ -83,6 +86,7 @@ flyOut = animation
   (iterationCount 1.0)
   normalAnimationDirection
   forwards
+  ARunning
 
 shuffle :: CSS
 shuffle = left (pct 200.0)
@@ -166,16 +170,22 @@ component =
                       , CSS.style do
                           animation
                             (fromString ("creepLeft" <> show (cursor `mod` 2)))
-                            (ms $  ((unwrap (nelmod playlist.sequence cursor).duration)))
+                            (ms $ ((unwrap (nelmod playlist.sequence cursor).duration)))
                             Linear
                             (sec 0.0)
                             (iterationCount 1.0)
                             normalAnimationDirection
                             forwards
+                            case scrollState of
+                              T.Scrolling -> ARunning
+                              T.Loading -> AInitial
+                              _ -> APaused
                       ]
                       []
                   ]
-, HH.div [ classes ["text-pink-600"]][let plen = NEL.length playlist.sequence in HH.text $ intercalate " " $ map (\ix -> if cursor `mod` plen >= ix then "⬤" else "◯") (0 .. (plen - 1))]
+              , HH.div [ classes [ "text-pink-600" ] ]
+                  [ let plen = NEL.length playlist.sequence in HH.text $ intercalate " " $ map (\ix -> if cursor `mod` plen >= ix then "⬤" else "◯") (0 .. (plen - 1))
+                  ]
               ]
 
           --HH.div [ classes [  ] ]
@@ -356,7 +366,7 @@ component =
           , listener = HS.notify listener
           }
     , handleCodeOutput: match
-        { textChanged: \text -> do
+        { textChanged: \_ -> do
             mempty
         , pauseScroll: \_ ->
             H.raise $ inj (Proxy :: _ "pauseScroll") unit
