@@ -1,16 +1,20 @@
 var path = require("path");
 var webpack = require("webpack");
+var HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = {
-	mode: "production",
+	mode: "development",
 	entry: process.env.WEBPACK_ENTRY
 		? process.env.WEBPACK_ENTRY
 		: "./src/index.js",
 	output: {
 		path: path.resolve(__dirname, "dist"),
 		filename: "bundle.js",
+		clean: true,
 	},
-	plugins: [new webpack.EnvironmentPlugin({ WAGSI_MODE: "live" })],
+	plugins: [
+		new HtmlWebpackPlugin({title:"wags.fm"}),
+	],
 	resolve: {
 		alias: {
 			"../Halogen.Component/index.js": "../../src/Halogen.Component.patch.js",
