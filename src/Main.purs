@@ -2,12 +2,11 @@ module Main where
 
 import Prelude
 
+import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, right, ms, pct, sec)
+import CSS.Hack.Animation (AnimationPlayState(..), animation, forwards, infinite, iterationCount, normalAnimationDirection)
 import Components.Editor as Editor
 import Components.Player as Player
 import Control.Controller as C
-import Halogen.HTML.CSS as CSS
-import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, right, ms, pct, sec)
-import CSS.Hack.Animation (AnimationPlayState(..), animation, forwards, infinite, iterationCount, normalAnimationDirection)
 import Data.Foldable (for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
@@ -19,6 +18,7 @@ import Halogen (HalogenM)
 import Halogen as H
 import Halogen.Aff (awaitBody, runHalogenAff)
 import Halogen.HTML as HH
+import Halogen.HTML.CSS as CSS
 import Halogen.Subscription as HS
 import Halogen.VDom.Driver (runUI)
 import JIT.Compile (compile)
@@ -39,6 +39,8 @@ type Slots =
   ( player :: forall query. H.Slot query T.PlayerOutput Unit
   , editor :: forall query. H.Slot query T.EditorOutput Unit
   )
+
+foreign import hackishlyRemoveInitialSSR :: Effect Unit
 
 component :: forall q i o m. Loader -> MonadAff m => H.Component q i o m
 component loader =
@@ -189,6 +191,7 @@ component loader =
         , choosePlaylist: \playlist -> do
             H.modify_ _ { playlist = playlist }
         , hidePlayer: \{ transitionTime } -> do
+            H.liftEffect hackishlyRemoveInitialSSR
             H.modify_ _
               { playerIsHidden = true
               , playerTransitionTime = transitionTime
