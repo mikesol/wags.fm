@@ -20,7 +20,7 @@
 	},
 	"scripts": {
 		"start": "spago install && spago build && webpack serve --mode=development --open",
-		"build": "webpack && google-closure-compiler --js dist/bundle.js --js_output_file bundle.js",
+		"build": "webpack && google-closure-compiler --js dist/bundle.js --js_output_file dist/bundle.js",
 		"format:dhall": "dhall lint *.dhall",
 		"format": "purs-tidy format-in-place src/**/*.purs src/*.purs"
 	},
