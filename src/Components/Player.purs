@@ -2,7 +2,7 @@ module Components.Player where
 
 import Prelude
 
-import CSS (TimingFunction(..), animation, backgroundImage, forwards, fromString, iterationCount, normalAnimationDirection, sec, url)
+import CSS (TimingFunction(..), opacity, animation, backgroundImage, forwards, fromString, iterationCount, normalAnimationDirection, sec, url)
 import Data.Maybe (Maybe(..))
 import Data.Monoid (guard)
 import Data.Variant (Variant, inj, match)
@@ -183,11 +183,12 @@ component =
                   [ HH.div
                       [ classes [ "flex-grow-0" ]
                       , CSS.style do
+                          opacity 0.0
                           animation
                             (fromString $ if isPlaying then "fadeIn" else "fadeOut")
                             (sec 0.5)
                             Linear
-                            (sec 0.0)
+                            (sec $ if isPlaying then 0.0 else 1.0)
                             (iterationCount 1.0)
                             normalAnimationDirection
                             forwards
@@ -213,7 +214,7 @@ component =
   handleAction = match
     { pressPlay: const $ do
         H.raise pressPlay
-        H.liftAff $ delay (Milliseconds 2000.0)
+        H.liftAff $ delay (Milliseconds 250.0)
         { isPlaying, hiddenInstr: { hidden } } <- H.get
         when (isPlaying && not hidden) $ H.raise $ hidePlayer { transitionTime: 0.995 }
     , pressStop: const $ do

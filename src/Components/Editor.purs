@@ -2,7 +2,7 @@ module Components.Editor where
 
 import Prelude
 
-import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, ms, pct, sec)
+import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, right, ms, pct, sec)
 import CSS.Hack.Animation (AnimationPlayState(..), animation, forwards, infinite, iterationCount, normalAnimationDirection)
 import Components.ErrorModal as EM
 import Components.MyAce as MyAce
@@ -317,12 +317,19 @@ component =
         HH.div
           [ classes editorClasses
           , CSS.style do
-              case cMod of
-                0 -> flyIn
-                1 -> flyOut
-                2 -> shuffle
-                3 -> shuffle
-                _ -> panic
+              case i.cursor of
+                0 -> case pos of
+                     0 -> pure unit
+                     1 -> left (pct (-150.0))
+                     2 -> left (pct (200.0))
+                     3 -> left (pct (200.0))
+                     _ -> panic
+                _ -> case cMod of
+                      0 -> flyIn
+                      1 -> flyOut
+                      2 -> shuffle
+                      3 -> shuffle
+                      _ -> panic
           ]
           [ HH.slot (Proxy :: _ "code")
               jump
