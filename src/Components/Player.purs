@@ -205,12 +205,12 @@ component =
                       [ HH.div
                           [ classes [ "flex-grow-0" ]
                           , CSS.style do
-                              opacity 0.0
+                              -- opacity 0.0
                               animation
                                 (fromString $ if isPlaying then "fadeIn" else "fadeOut")
                                 (sec 0.5)
                                 Linear
-                                (sec $ if isPlaying then 0.0 else 1.0)
+                                (sec $ 0.0)
                                 (iterationCount 1.0)
                                 normalAnimationDirection
                                 forwards
