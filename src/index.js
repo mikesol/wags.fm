@@ -3,6 +3,8 @@ import main from "../output/Main";
 import "../output/Components.Editor";
 import "../output/Components.Player";
 import "../node_modules/ace-builds/src-noconflict/ace.js";
+import "../node_modules/ace-builds/src-noconflict/mode-haskell";
+import "../node_modules/ace-builds/src-noconflict/theme-cobalt";
 main.main();
 
 if (module.hot) {

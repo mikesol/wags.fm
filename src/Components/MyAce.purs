@@ -169,7 +169,7 @@ setupEditor :: HTMLElement -> Effect Editor
 setupEditor element = do
   editor <- Ace.editNode element Ace.ace
   Editor.setShowPrintMargin false editor
-  Editor.setTheme "ace/theme/dawn" editor
+  Editor.setTheme "ace/theme/cobalt" editor
 
   renderer <- Editor.getRenderer editor
   Renderer.setShowGutter true renderer
