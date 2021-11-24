@@ -168,7 +168,7 @@ component =
                               [ classes [ "flex", "flex-row", "w-full" ]
                               ]
                               [ HH.div [ classes [ "flex-grow" ] ] []
-                              , HH.div [ classes [ "flex-grow-0" , "cursor-pointer" ] ]
+                              , HH.div [ classes [ "flex-grow-0", "cursor-pointer" ] ]
                                   [ icon
                                       ( ( if isPlaying then SVGIcons.stop
                                           else SVGIcons.play

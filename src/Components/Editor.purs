@@ -324,17 +324,17 @@ component =
           , CSS.style do
               case i.cursor of
                 0 -> case pos of
-                     0 -> pure unit
-                     1 -> left (pct (-150.0))
-                     2 -> left (pct (200.0))
-                     3 -> left (pct (200.0))
-                     _ -> panic
+                  0 -> pure unit
+                  1 -> left (pct (-150.0))
+                  2 -> left (pct (200.0))
+                  3 -> left (pct (200.0))
+                  _ -> panic
                 _ -> case cMod of
-                      0 -> flyIn
-                      1 -> flyOut
-                      2 -> shuffle
-                      3 -> shuffle
-                      _ -> panic
+                  0 -> flyIn
+                  1 -> flyOut
+                  2 -> shuffle
+                  3 -> shuffle
+                  _ -> panic
           ]
           [ HH.slot (Proxy :: _ "code")
               jump
