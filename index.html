@@ -3,8 +3,43 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>wags.fm</title>
+		<style>
+			.ssr-body-hack {
+				margin: 0px;
+			}
+			.ssr-hack {
+				tab-size: 4;
+				-webkit-text-size-adjust: 100%;
+				font-family: inherit;
+				line-height: inherit;
+				box-sizing: border-box;
+				border-width: 0;
+				border-style: solid;
+				--hack-border-opacity: 1;
+				border-color: rgba(229, 231, 235, var(--hack-border-opacity));
+				--hack-shadow: 0 0 #0000;
+				--hack-ring-inset: var(--hack-empty, /*!*/ /*!*/);
+				--hack-ring-offset-width: 0px;
+				--hack-ring-offset-color: #fff;
+				--hack-ring-color: rgba(59, 130, 246, 0.5);
+				--hack-ring-offset-shadow: 0 0 #0000;
+				--hack-ring-shadow: 0 0 #0000;
+				position: absolute;
+				z-index: 10;
+				display: grid;
+				height: 100vw;
+				width: 100vw;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				grid-template-rows: repeat(3, minmax(0, 1fr));
+				background-image: linear-gradient(to right, var(--hack-gradient-stops));
+				--hack-gradient-from: #a78bfa;
+				--hack-gradient-stops: var(--hack-gradient-from), #ec4899,
+					var(--hack-gradient-to, rgba(236, 72, 153, 0));
+				--hack-gradient-to: #ef4444;
+			}
+		</style>
 		<link rel="canonical" href="http://mikesol.github.io/wags.fm" />
-		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<script
 			async
 			src="https://www.googletagmanager.com/gtag/js?id=G-PTMVJD534Q"
@@ -18,6 +53,5 @@
 			gtag("config", "G-PTMVJD534Q");
 		</script>
 	<script defer src="bundle.js"></script></head>
-	<body>
-	</body>
+	<body class="ssr-body-hack"><div id="hackish-ssr-div" class="ssr-hack"></div></body>
 </html>
