@@ -18,8 +18,8 @@
 		"webpack-dev-server": "^3.11.2"
 	},
 	"scripts": {
-		"start": "spago install && spago build && webpack serve --mode=development --open",
-		"build": "webpack",
+		"start": "spago install && spago build && webpack serve --env=development --open",
+		"build": "webpack --env=production",
 		"format:dhall": "dhall lint *.dhall",
 		"format": "purs-tidy format-in-place src/**/*.purs src/*.purs"
 	},
