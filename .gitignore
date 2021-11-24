@@ -10,12 +10,5 @@
 /.spago
 /dist
 /scripts/.venv
-/src/PutThePastBehindUs/*.purs
-/src/Plumbing/Gopher.purs
-ide-purescript-*.vsix
-language-purescript-*.vsix
 .purs-repl
-/readme/
-readme.dhall
-/storybook/*.purs
 /.vscode/settings.json
