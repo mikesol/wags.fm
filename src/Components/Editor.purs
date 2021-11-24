@@ -50,7 +50,7 @@ pauseScroll
    . Variant (pauseScroll :: Unit | r)
 pauseScroll = inj (Proxy :: _ "pauseScroll") unit
 
-editorClasses = [ "absolute", "w-full" ] :: Array String
+editorClasses = [ "absolute", "w-full", "h-full" ] :: Array String
 
 spin :: CSS
 spin = animation
@@ -261,7 +261,7 @@ component =
           ]
           [ HH.slot (Proxy :: _ "code")
               jump
-              MyAce.component
+              (MyAce.component pos)
               unit
               (inj (Proxy :: _ "handleCodeOutput"))
           ]

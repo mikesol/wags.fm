@@ -27,6 +27,7 @@ import Data.Tuple (Tuple(..))
 import Data.Variant as V
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
+import Effect.Class.Console as Log
 import Effect.Ref as Ref
 import Effect.Timer (clearTimeout, setTimeout)
 import Halogen as H
@@ -38,6 +39,7 @@ import Halogen.Subscription as HS
 import JIT.API (ErrorPosition)
 import Type.Proxy (Proxy(..))
 import Types as T
+import Util (classes)
 import Web.HTML (HTMLElement)
 
 type Slot = H.Slot T.MyAceQuery T.MyAceOutput
@@ -60,8 +62,8 @@ type State =
   , unsubscribeFromHalogen :: Maybe SubscriptionId
   }
 
-component :: forall i m. MonadAff m => H.Component T.MyAceQuery i T.MyAceOutput m
-component = H.mkComponent
+component :: forall i m. MonadAff m => Int -> H.Component T.MyAceQuery i T.MyAceOutput m
+component id = H.mkComponent
   { initialState
   , render
   , eval: H.mkEval $ H.defaultEval
@@ -85,7 +87,8 @@ component = H.mkComponent
   render _ =
     HH.div
       [ HP.ref $ H.RefLabel "ace"
-      , HP.id "code"
+      , HP.id ("code" <> show id)
+      , classes ["w-full", "h-full"]
       , HE.onClick \_ -> (V.inj (Proxy :: _ "pauseScroll") unit)
       ]
       []
@@ -133,6 +136,7 @@ component = H.mkComponent
         pure (Just (reply contents))
 
     , setEditorContent: \(Tuple text next) -> do
+        Log.info ("Setting content " <> text)
         H.gets _.editor >>= traverse_ \editor -> H.liftEffect do
           current <- Editor.getValue editor
           when (text /= current) do

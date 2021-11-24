@@ -24,6 +24,7 @@
   , "halogen"
   , "halogen-css"
   , "halogen-subscriptions"
+  , "identity"
   , "integers"
   , "jit"
   , "js-timers"

@@ -10,7 +10,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
 import Data.Variant (inj, match)
 import Effect (Effect)
-import Effect.Class (class MonadEffect)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Ref as Ref
 import Halogen (HalogenM)
 import Halogen as H
@@ -37,7 +37,7 @@ type Slots =
   , editor :: forall query. H.Slot query T.EditorOutput Unit
   )
 
-component :: forall q i o m. Loader -> MonadEffect m => H.Component q i o m
+component :: forall q i o m. Loader -> MonadAff m => H.Component q i o m
 component loader =
   H.mkComponent
     { initialState

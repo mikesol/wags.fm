@@ -87,6 +87,7 @@ component =
           , "grid"
           , "grid-rows-3"
           , "grid-cols-3"
+          , "z-10"
           ]
       , CSS.style do
           backgroundImage (url background)
