@@ -88,9 +88,10 @@ component =
           , "grid-rows-3"
           , "grid-cols-3"
           , "z-10"
+          , "bg-gradient-to-r","from-purple-400","via-pink-500","to-red-500"
           ]
       , CSS.style do
-          backgroundImage (url background)
+          -- backgroundImage (url background)
           when hasHiddenOnce $ animation
             (fromString $ if hiddenInstr.hidden then "flyUp" else "flyDown")
             (sec hiddenInstr.transitionTime)
