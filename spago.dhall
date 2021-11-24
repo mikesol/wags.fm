@@ -1,6 +1,7 @@
 { name = "wags.fm"
 , dependencies =
-  [ "aff"
+  [ "ace"
+  , "aff"
   , "aff-promise"
   , "arrays"
   , "behaviors"

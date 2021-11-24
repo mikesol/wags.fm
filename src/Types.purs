@@ -2,19 +2,24 @@ module Types where
 
 import Prelude
 
+import Ace as Ace
 import Data.Functor.Variant (VariantF)
+import Data.Functor.Variant as VF
 import Data.Generic.Rep (class Generic)
+import Data.Identity (Identity)
 import Data.List.Types (NonEmptyList)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
 import Data.Show.Generic (genericShow)
 import Data.Time.Duration (Milliseconds)
+import Data.Tuple (Tuple)
 import Data.Variant (Variant)
 import Effect (Effect)
 import Effect.Exception (Error)
 import Effect.Ref (Ref)
 import Halogen.Query.HalogenM (SubscriptionId)
 import JIT.API as API
+import Type.Proxy (Proxy(..))
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Types (SampleCache)
 import WAGS.WebAPI (AudioContext)
@@ -35,30 +40,6 @@ type PlaylistSequence = NonEmptyList
 type Playlist =
   { title :: String
   , sequence :: PlaylistSequence
-  }
-
-type CodeInput =
-  { pos :: Int
-  , jump :: Int
-  , cursor :: Int
-  , playlist :: Playlist
-  , isEditable :: Boolean
-  , isInErrorState :: Boolean
-  }
-
-newtype CodeQuery a = CodeQuery (VariantF (getCode :: (->) String) a)
-
-derive instance newtypeCodeQuery :: Newtype (CodeQuery a) _
-type CodeOutput = Variant (pauseScroll :: Unit)
-type CodeAction = Variant (pauseScroll :: Unit, input :: CodeInput)
-type CodeState =
-  { pos :: Int
-  , jump :: Int
-  , cursor :: Int
-  , playlist :: Playlist
-  , isEditable :: Boolean
-  , isInErrorState :: Boolean
-  , lastQueriedCode :: Maybe String
   }
 
 type EditorInput =
@@ -117,7 +98,7 @@ type EditorAction = Variant
   , input :: EditorInput
   , showCompileError :: Unit
   , handleModalOutput :: ModalOutput
-  , handleCodeOutput :: CodeOutput
+  , handleCodeOutput :: MyAceOutput
   )
 
 type PlayScrollInfo =
@@ -176,3 +157,52 @@ type PlayerState =
   , hasPlayedOnce :: Boolean
   , hasHiddenOnce :: Boolean
   }
+
+------
+------
+data MarkerType = MarkerError | MarkerWarning
+
+derive instance eqMarkerType :: Eq MarkerType
+
+type MarkerInfo =
+  { markerType :: MarkerType
+  , position :: API.ErrorPosition
+  }
+
+newtype MyAceQuery a = MyAceQuery
+  ( VariantF
+      ( getEditorContent :: (->) (Maybe String)
+      , setEditorContent :: Tuple String
+      , setAnnotations :: Tuple (Array Ace.Annotation)
+      , addMarker :: Tuple MarkerInfo
+      , removeMarkers :: Identity
+      )
+      a
+  )
+
+derive instance newtypeMyAceQuery :: Newtype (MyAceQuery a) _
+
+_getEditorContent :: forall a. (Maybe String -> a) -> MyAceQuery a
+_getEditorContent = MyAceQuery <<< VF.inj (Proxy :: _ "getEditorContent")
+
+_setEditorContent :: forall a. Tuple String a -> MyAceQuery a
+_setEditorContent = MyAceQuery <<< VF.inj (Proxy :: _ "setEditorContent")
+
+_setAnnotations :: forall a. Tuple (Array Ace.Annotation) a -> MyAceQuery a
+_setAnnotations = MyAceQuery <<< VF.inj (Proxy :: _ "setAnnotations")
+
+_addMarker :: forall a. Tuple MarkerInfo a -> MyAceQuery a
+_addMarker = MyAceQuery <<< VF.inj (Proxy :: _ "addMarker")
+
+_removeMarkers :: forall a. Identity a -> MyAceQuery a
+_removeMarkers = MyAceQuery <<< VF.inj (Proxy :: _ "removeMarkers")
+
+type MyAceAction = Variant
+  ( initialize :: Unit
+  , finalize :: Unit
+  , clearMarkers :: Unit
+  , handleChange :: Unit
+  , pauseScroll :: Unit
+  )
+
+type MyAceOutput = Variant (textChanged :: String, pauseScroll :: Unit)

@@ -2,18 +2,20 @@ module Components.Editor where
 
 import Prelude
 
-import CSS (CSS, TimingFunction(..), animation, forwards, fromString, infinite, normalAnimationDirection, sec)
-import Components.Code as Code
+import CSS (CSS, TimingFunction(..), animation, display, displayNone, forwards, fromString, infinite, iterationCount, left, normalAnimationDirection, pct, sec)
 import Components.ErrorModal as EM
+import Components.MyAce as MyAce
 import Control.Plus (empty)
-import Data.Array (intercalate)
+import Data.Array (intercalate, (..))
 import Data.Foldable (traverse_)
 import Data.Functor.Variant as VF
 import Data.Maybe (Maybe(..), maybe)
 import Data.Nullable (toMaybe)
 import Data.String as String
+import Data.Traversable (traverse)
+import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, inj, match)
-import Effect.Class (class MonadEffect)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console as Log
 import Halogen (HalogenM)
 import Halogen as H
@@ -22,13 +24,11 @@ import Halogen.HTML.CSS as CSS
 import Halogen.HTML.Events as HE
 import Halogen.Subscription as HS
 import JIT.API as API
-import Record as R
 import SVGIcons as SVGIcons
 import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
-import Types (CodeQuery(..))
 import Types as T
-import Util (classes)
+import Util (classes, nelmod)
 
 showPlayer
   :: forall r
@@ -62,6 +62,32 @@ spin = animation
   normalAnimationDirection
   forwards
 
+flyIn :: CSS
+flyIn = animation
+  (fromString "flyIn")
+  (sec 1.0)
+  EaseInOut
+  (sec 0.0)
+  (iterationCount 1.0)
+  normalAnimationDirection
+  forwards
+
+flyOut :: CSS
+flyOut = animation
+  (fromString "flyOut")
+  (sec 1.0)
+  EaseInOut
+  (sec 0.0)
+  (iterationCount 1.0)
+  normalAnimationDirection
+  forwards
+
+shuffle :: CSS
+shuffle = left (pct 200.0)
+
+panic :: CSS
+panic = display displayNone
+
 asMain :: String -> String
 asMain = intercalate "\n"
   <<< map
@@ -74,7 +100,7 @@ asMain = intercalate "\n"
 
 type Slots =
   ( modal :: forall query. H.Slot query T.ModalOutput Unit
-  , code :: H.Slot T.CodeQuery T.CodeOutput Int
+  , code :: H.Slot T.MyAceQuery T.MyAceOutput Int
   )
 
 compileErrorsToString :: Array API.CompilerError -> String
@@ -86,7 +112,7 @@ compileErrorsToString = intercalate "\n" <<< map \err ->
 mjump :: Int -> Int -> Int
 mjump cursor pos = (((cursor + (pos + 1)) / 4) * 4) - pos
 
-component :: forall q m. MonadEffect m => H.Component q T.EditorInput T.EditorOutput m
+component :: forall q m. MonadAff m => H.Component q T.EditorInput T.EditorOutput m
 component =
   H.mkComponent
     { initialState
@@ -155,96 +181,59 @@ component =
               , "flex-col"
               ]
           ]
-          ( let
-              codeBase =
-                { cursor: i.cursor
-                , playlist: i.playlist
-                , isEditable: case scrollState of
-                    T.Loading -> false
-                    _ -> true
-                , isInErrorState: case scrollState of
-                    T.YourError -> true
-                    T.OurError -> true
-                    _ -> false
-                }
-            in
-              [ HH.div [ classes [ "relative", "flex-grow" ] ]
-                  [ let
-                      jump = mjump i.cursor 0
-                    in
-                      HH.slot (Proxy :: _ "code") jump Code.component
-                        (R.union codeBase { pos: 0, jump })
-                        (inj (Proxy :: _ "handleCodeOutput"))
-                  , let
-                      jump = mjump i.cursor 1
-                    in
-                      HH.slot (Proxy :: _ "code") jump Code.component
-                        (R.union codeBase { pos: 1, jump })
-                        (inj (Proxy :: _ "handleCodeOutput"))
-                  , let
-                      jump = mjump i.cursor 2
-                    in
-                      HH.slot (Proxy :: _ "code") jump Code.component
-                        (R.union codeBase { pos: 2, jump })
-                        (inj (Proxy :: _ "handleCodeOutput"))
-                  , let
-                      jump = mjump i.cursor 3
-                    in
-                      HH.slot (Proxy :: _ "code") jump Code.component
-                        (R.union codeBase { pos: 3, jump })
-                        (inj (Proxy :: _ "handleCodeOutput"))
-                  ]
-              ]
-                <>
-                  ( case scrollState of
-                      T.YourError ->
-                        [ HH.div [ classes [ "flex-grow-0", "flex", "flex-row" ] ]
-                            [ HH.div [ classes [ "flex-grow" ] ] []
-                            , HH.div [ classes [ "flex-grow-0" ] ]
-                                [ HH.span []
-                                    [ HH.text "The code above has errors."
-                                    , HH.a
-                                        [ classes
-                                            [ "underline"
-                                            , "cursor-pointer"
-                                            , "p-3"
-                                            ]
-                                        , HE.onClick (const $ inj (Proxy :: _ "showCompileError") unit)
-                                        ]
-                                        [ HH.text "Show." ]
-                                    ]
-                                ]
-                            ]
-                        ]
-                      _ -> []
-                  )
-                <>
-                  [ HH.div [ classes [ "flex-grow-0", "flex", "flex-row" ] ]
-                      [ HH.div [ classes [ "flex-grow" ] ] []
-                      , HH.div
-                          [ classes [ "flex-grow-0", "cursor-pointer" ] ]
-                          [ icon
-                              ( ( case scrollState of
-                                    T.Scrolling -> SVGIcons.pauseSolid
-                                    T.Paused -> SVGIcons.playSolid
-                                    T.YourError -> SVGIcons.playSolid
-                                    T.OurError -> SVGIcons.playSolid
-                                    T.Loading -> SVGIcons.spinner
-                                ) 50 50
-                              )
-                              case scrollState of
-                                T.Scrolling -> [ HE.onClick $ const $ pauseScroll ]
-                                T.Paused -> [ HE.onClick $ const $ resumeScroll ]
-                                T.YourError -> [ HE.onClick $ const $ resumeScroll ]
-                                T.OurError -> [ HE.onClick $ const $ resumeScroll ]
-                                T.Loading ->
-                                  [ CSS.style do
-                                      spin
+          ( [ HH.div [ classes [ "relative", "flex-grow" ] ]
+                (map mkEditor (0 .. 3))
+            ]
+              <>
+                ( case scrollState of
+                    T.YourError ->
+                      [ HH.div [ classes [ "flex-grow-0", "flex", "flex-row" ] ]
+                          [ HH.div [ classes [ "flex-grow" ] ] []
+                          , HH.div [ classes [ "flex-grow-0" ] ]
+                              [ HH.span []
+                                  [ HH.text "The code above has errors."
+                                  , HH.a
+                                      [ classes
+                                          [ "underline"
+                                          , "cursor-pointer"
+                                          , "p-3"
+                                          ]
+                                      , HE.onClick (const $ inj (Proxy :: _ "showCompileError") unit)
+                                      ]
+                                      [ HH.text "Show." ]
                                   ]
+                              ]
                           ]
-                      , HH.div [ classes [ "flex-grow" ] ] []
                       ]
-                  ]
+                    _ -> []
+                )
+              <>
+                [ HH.div [ classes [ "flex-grow-0", "flex", "flex-row" ] ]
+                    [ HH.div [ classes [ "flex-grow" ] ] []
+                    , HH.div
+                        [ classes [ "flex-grow-0", "cursor-pointer" ] ]
+                        [ icon
+                            ( ( case scrollState of
+                                  T.Scrolling -> SVGIcons.pauseSolid
+                                  T.Paused -> SVGIcons.playSolid
+                                  T.YourError -> SVGIcons.playSolid
+                                  T.OurError -> SVGIcons.playSolid
+                                  T.Loading -> SVGIcons.spinner
+                              ) 50 50
+                            )
+                            case scrollState of
+                              T.Scrolling -> [ HE.onClick $ const $ pauseScroll ]
+                              T.Paused -> [ HE.onClick $ const $ resumeScroll ]
+                              T.YourError -> [ HE.onClick $ const $ resumeScroll ]
+                              T.OurError -> [ HE.onClick $ const $ resumeScroll ]
+                              T.Loading ->
+                                [ CSS.style do
+                                    spin
+                                ]
+                        ]
+                    , HH.div [ classes [ "flex-grow" ] ] []
+                    ]
+                ]
           )
       ] <>
         ( modalShowable # maybe [] \ipt ->
@@ -253,18 +242,57 @@ component =
                 (inj (Proxy :: _ "handleModalOutput"))
             ]
         )
+    where
+    mkEditor :: Int -> HH.HTML (H.ComponentSlot Slots m T.EditorAction) T.EditorAction
+    mkEditor pos =
+      let
+        cMod = (i.cursor + pos) `mod` 4
+        jump = mjump i.cursor pos
+      in
+        HH.div
+          [ classes editorClasses
+          , CSS.style do
+              case cMod of
+                0 -> flyIn
+                1 -> flyOut
+                2 -> shuffle
+                3 -> shuffle
+                _ -> panic
+          ]
+          [ HH.slot (Proxy :: _ "code")
+              jump
+              MyAce.component
+              unit
+              (inj (Proxy :: _ "handleCodeOutput"))
+          ]
 
   handleAction
     :: T.EditorAction
     -> HalogenM T.EditorState T.EditorAction Slots T.EditorOutput m Unit
   handleAction = match
-    { input: \{ cursor, playlist, scrollState } ->
-        do
-          H.modify_ _
-            { cursor = cursor
-            , scrollState = scrollState
-            , playlist = playlist
-            }
+    { input: \{ cursor, playlist, scrollState } -> do
+        prevCursor <- H.gets _.cursor
+        -- only set content when there is a cursor change
+        -- which means that scroll is imminent
+        -- as content will only change for something off screen
+        -- there should be no flicker
+        -- if there is, revisit!
+        when (prevCursor /= cursor) do
+          _ <- (0 .. 3) # traverse \pos -> do
+            let jump = mjump cursor pos
+            H.request
+              (Proxy :: _ "code")
+              jump
+              ( const $ T.MyAceQuery
+                  $ VF.inj (Proxy :: _ "setEditorContent")
+                  $ Tuple (asMain (nelmod playlist.sequence jump).code) unit
+              )
+          mempty
+        H.modify_ _
+          { cursor = cursor
+          , scrollState = scrollState
+          , playlist = playlist
+          }
     , initialize: const do
         { emitter, listener } <- H.liftEffect $ HS.create
         unsubscribeFromHalogen <- H.subscribe emitter
@@ -273,7 +301,10 @@ component =
           , listener = HS.notify listener
           }
     , handleCodeOutput: match
-        { pauseScroll: \_ -> H.raise pauseScroll
+        { textChanged: \text -> do
+            mempty
+        , pauseScroll: \_ ->
+            H.raise $ inj (Proxy :: _ "pauseScroll") unit
         }
     , showCompileError: const do
         { mostRecentCompileErrors } <- H.get
@@ -311,9 +342,9 @@ component =
           }
     , resumeScroll: const do
         { cursor, listener } <- H.get
-        code <- H.request (Proxy :: _ "code")
+        code <- map join $ H.request (Proxy :: _ "code")
           cursor
-          (CodeQuery <<< VF.inj (Proxy :: _ "getCode"))
+          (T.MyAceQuery <<< VF.inj (Proxy :: _ "getEditorContent"))
         -- Log.info (code # maybe "did not get code" (append "got code: "))
         code # traverse_
           ( H.raise <<< playScroll <<<
