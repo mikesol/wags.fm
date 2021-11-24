@@ -32,8 +32,8 @@ import Util (classes, nelmod)
 
 showPlayer
   :: forall r
-   . Variant (showPlayer :: Unit | r)
-showPlayer = inj (Proxy :: _ "showPlayer") unit
+   . Variant (showPlayer :: { transitionTime :: Number } | r)
+showPlayer = inj (Proxy :: _ "showPlayer") { transitionTime: 0.6 }
 
 resumeScroll
   :: forall r. Variant (resumeScroll :: Unit | r)

@@ -65,6 +65,7 @@ type MainState =
   , stopScrolling :: Effect Unit
   , scrollState :: ScrollState
   , isPlaying :: Boolean
+  , playerTransitionTime :: Number
   , bufferCache :: Maybe (Ref SampleCache)
   , unsubscribeFromHalogen :: Maybe SubscriptionId
   , playerIsHidden :: Boolean
@@ -92,7 +93,7 @@ type EditorAction = Variant
   ( pauseScroll :: Unit
   , initialize :: Unit
   , setMostRecentCompileErrors :: Array API.CompilerError
-  , showPlayer :: Unit
+  , showPlayer :: { transitionTime :: Number }
   , resumeScroll :: Unit
   , somethingWentWrong :: Unit
   , input :: EditorInput
@@ -112,7 +113,7 @@ type EditorOutput = Variant
   , editorInErrorState :: Unit
   , editorReceivedCompileError :: Unit
   , pauseScroll :: Unit
-  , showPlayer :: Unit
+  , showPlayer :: { transitionTime :: Number }
   )
 
 type MainAction = Variant
@@ -134,25 +135,25 @@ type PlayerAction = Variant
   , choosePlaylist :: Playlist
   , pressPlay :: Unit
   , pressStop :: Unit
-  , hidePlayer :: Unit
+  , hidePlayer :: { transitionTime :: Number }
   )
 
 type PlayerInput =
   { playlist :: Playlist
   , isPlaying :: Boolean
-  , isHidden :: Boolean
+  , hiddenInstr :: { transitionTime :: Number, hidden :: Boolean }
   }
 
 type PlayerOutput = Variant
   ( choosePlaylist :: Playlist
   , pressPlay :: Unit
   , pressStop :: Unit
-  , hidePlayer :: Unit
+  , hidePlayer :: { transitionTime :: Number }
   )
 
 type PlayerState =
   { playlist :: Playlist
-  , isHidden :: Boolean
+  , hiddenInstr :: { transitionTime :: Number, hidden :: Boolean }
   , isPlaying :: Boolean
   , hasPlayedOnce :: Boolean
   , hasHiddenOnce :: Boolean

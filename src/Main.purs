@@ -51,6 +51,7 @@ component loader =
   initialState _ =
     { playlist: Java.playlist
     , cursor: -1
+    , playerTransitionTime: 0.6
     , stopWags: mempty
     , stopScrolling: mempty
     , scrollState: T.Paused
@@ -63,7 +64,14 @@ component loader =
     , audioContext: Nothing
     }
 
-  render { cursor, playlist, isPlaying, playerIsHidden, scrollState } =
+  render
+    { cursor
+    , playlist
+    , isPlaying
+    , playerTransitionTime
+    , playerIsHidden
+    , scrollState
+    } =
     HH.div [ classes [ "w-screen", "h-screen" ] ]
       [ HH.slot _editor unit Editor.component
           { cursor
@@ -74,7 +82,10 @@ component loader =
       , HH.slot _player unit Player.component
           { playlist
           , isPlaying
-          , isHidden: playerIsHidden
+          , hiddenInstr:
+              { hidden: playerIsHidden
+              , transitionTime: playerTransitionTime
+              }
           }
           (inj (Proxy :: _ "handlePlayerOutput"))
       ]
@@ -84,8 +95,11 @@ component loader =
     -> HalogenM T.MainState T.MainAction Slots o m Unit
   handleAction = match
     { handleEditorOutput: match
-        { showPlayer: const do
-            H.modify_ _ { playerIsHidden = false }
+        { showPlayer: \{ transitionTime } -> do
+            H.modify_ _
+              { playerIsHidden = false
+              , playerTransitionTime = transitionTime
+              }
         , playScroll:
             \{ code
              , ourFaultErrorCallback
@@ -171,8 +185,11 @@ component loader =
               }
         , choosePlaylist: \playlist -> do
             H.modify_ _ { playlist = playlist }
-        , hidePlayer: const do
-            H.modify_ _ { playerIsHidden = true }
+        , hidePlayer: \{ transitionTime } -> do
+            H.modify_ _
+              { playerIsHidden = true
+              , playerTransitionTime = transitionTime
+              }
         }
     , initialize: const do
         ------------- we initialize the whole application with a call to the compiler

@@ -6,8 +6,8 @@ import CSS (TimingFunction(..), animation, backgroundImage, forwards, fromString
 import Data.Maybe (Maybe(..))
 import Data.Monoid (guard)
 import Data.Variant (Variant, inj, match)
-import Effect.Class (class MonadEffect)
-import Effect.Class.Console as Log
+import Effect.Aff (Milliseconds(..), delay)
+import Effect.Aff.Class (class MonadAff)
 import Halogen (HalogenM)
 import Halogen as H
 import Halogen.HTML as HH
@@ -17,8 +17,8 @@ import Playlists as Playlists
 import SVGIcons as SVGIcons
 import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
-import Util (classes)
 import Types as T
+import Util (classes)
 
 type State = {}
 
@@ -42,15 +42,15 @@ pressPlay = inj (Proxy :: _ "pressPlay") unit
 
 hidePlayer
   :: forall r
-   . Variant (hidePlayer :: Unit | r)
-hidePlayer = inj (Proxy :: _ "hidePlayer") unit
+   . { transitionTime :: Number } ->  Variant (hidePlayer :: { transitionTime :: Number } | r)
+hidePlayer = inj (Proxy :: _ "hidePlayer")
 
 pressStop
   :: forall r
    . Variant (pressStop :: Unit | r)
 pressStop = inj (Proxy :: _ "pressStop") unit
 
-component :: forall q m. MonadEffect m => H.Component q T.PlayerInput T.PlayerOutput m
+component :: forall q m. MonadAff m => H.Component q T.PlayerInput T.PlayerOutput m
 component =
   H.mkComponent
     { initialState
@@ -61,10 +61,10 @@ component =
         }
     }
   where
-  initialState { playlist, isPlaying, isHidden } =
+  initialState { playlist, isPlaying, hiddenInstr } =
     { playlist
     , isPlaying
-    , isHidden
+    , hiddenInstr
     , hasPlayedOnce: false
     , hasHiddenOnce: false
     }
@@ -72,7 +72,7 @@ component =
   render
     { playlist
     , isPlaying
-    , isHidden
+    , hiddenInstr
     , hasPlayedOnce
     , hasHiddenOnce
     } =
@@ -92,8 +92,8 @@ component =
       , CSS.style do
           backgroundImage (url background)
           when hasHiddenOnce $ animation
-            (fromString $ if isHidden then "flyUp" else "flyDown")
-            (sec 0.6)
+            (fromString $ if hiddenInstr.hidden then "flyUp" else "flyDown")
+            (sec hiddenInstr.transitionTime)
             EaseInOut
             (sec 0.0)
             (iterationCount 1.0)
@@ -198,7 +198,7 @@ component =
                               , "cursor-pointer"
                               , "p-3"
                               ] <> bgStyling
-                          , HE.onClick $ const $ hidePlayer
+                          , HE.onClick $ const $ hidePlayer { transitionTime: 0.6 }
                           ]
                           [ HH.text "Edit me" ]
                       ]
@@ -213,20 +213,23 @@ component =
   handleAction = match
     { pressPlay: const $ do
         H.raise pressPlay
+        H.liftAff $ delay (Milliseconds 2000.0)
+        { isPlaying } <- H.get
+        when isPlaying $ H.raise $ hidePlayer { transitionTime: 0.995 }
     , pressStop: const $ do
         H.raise pressStop
     , hidePlayer: const $ do
-        H.raise hidePlayer
+        H.raise $ hidePlayer { transitionTime: 0.6}
     , choosePlaylist: \playlist -> do
         -- Log.info "choose playlist"
         H.raise pressStop
         H.raise (choosePlaylist playlist)
-    , input: \{ playlist, isPlaying, isHidden } -> do
+    , input: \{ playlist, isPlaying, hiddenInstr } -> do
         H.modify_ $ \i -> i
           { playlist = playlist
           , isPlaying = isPlaying
-          , isHidden = isHidden
+          , hiddenInstr = hiddenInstr
           , hasPlayedOnce = i.hasPlayedOnce || isPlaying
-          , hasHiddenOnce = i.hasHiddenOnce || isHidden
+          , hasHiddenOnce = i.hasHiddenOnce || hiddenInstr.hidden
           }
     }
