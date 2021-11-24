@@ -160,7 +160,8 @@ component =
               [ "row-start-1"
               , "row-end-1"
               , "col-start-1"
-              , "col-end-1"
+              , "col-end-4"
+              , "md:col-end-1"
               ]
           ]
           [ HH.div [ classesS "w-full p-3" ]
@@ -217,9 +218,13 @@ component =
       , HH.div
           [ classes
               [ "row-start-2"
-              , "row-end-5"
-              , "col-start-2"
-              , "col-end-5"
+              , "row-end-6"
+              , "col-start-1"
+              , "col-end-6"
+              , "md:row-start-2"
+              , "md:row-end-5"
+              , "md:col-start-2"
+              , "md:col-end-5"
               , "flex"
               , "flex-col"
               ]
