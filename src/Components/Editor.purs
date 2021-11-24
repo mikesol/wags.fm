@@ -210,27 +210,49 @@ component =
               <>
                 [ HH.div [ classes [ "flex-grow-0", "flex", "flex-row" ] ]
                     [ HH.div [ classes [ "flex-grow" ] ] []
-                    , HH.div
-                        [ classes [ "flex-grow-0", "cursor-pointer" ] ]
-                        [ icon
-                            ( ( case scrollState of
-                                  T.Scrolling -> SVGIcons.pauseSolid
-                                  T.Paused -> SVGIcons.playSolid
-                                  T.YourError -> SVGIcons.playSolid
-                                  T.OurError -> SVGIcons.playSolid
-                                  T.Loading -> SVGIcons.spinner
-                              ) 50 50
-                            )
-                            case scrollState of
-                              T.Scrolling -> [ HE.onClick $ const $ pauseScroll ]
-                              T.Paused -> [ HE.onClick $ const $ resumeScroll ]
-                              T.YourError -> [ HE.onClick $ const $ resumeScroll ]
-                              T.OurError -> [ HE.onClick $ const $ resumeScroll ]
-                              T.Loading ->
-                                [ CSS.style do
-                                    spin
-                                ]
-                        ]
+                    , case scrollState of
+                        T.Scrolling -> HH.div
+                          [ classes
+
+                              [ "flex-grow-0"
+                              , "cursor-pointer"
+                              , "p-3"
+                              ]
+                          , HE.onClick $ const $ pauseScroll
+                          ]
+                          [ HH.text "Click the editor to change the sound."
+                          ]
+                        T.Paused -> HH.div
+                          [ classes [ "flex-grow-0", "cursor-pointer", "p-3" ] ]
+                          [ icon
+                              ( (SVGIcons.playSolid 40 40)
+                              )
+                              [ HE.onClick $ const $ resumeScroll ]
+                          ]
+                        T.YourError -> HH.div
+                          [ classes [ "flex-grow-0", "cursor-pointer", "p-3" ] ]
+                          [ icon
+                              ( (SVGIcons.playSolid 40 40)
+                              )
+                              [ HE.onClick $ const $ resumeScroll ]
+                          ]
+                        T.OurError -> HH.div
+                          [ classes [ "flex-grow-0", "cursor-pointer", "p-3" ] ]
+                          [ icon
+                              (SVGIcons.playSolid 40 40)
+
+                              [ HE.onClick $ const $ resumeScroll ]
+                          ]
+                        T.Loading -> HH.div
+                          [ classes [ "flex-grow-0", "cursor-pointer", "p-3" ] ]
+                          [ icon
+                              ( ( SVGIcons.spinner
+                                ) 40 40
+                              )
+                              [ CSS.style do
+                                  spin
+                              ]
+                          ]
                     , HH.div [ classes [ "flex-grow" ] ] []
                     ]
                 ]
