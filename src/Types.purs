@@ -65,8 +65,8 @@ type MainState =
   , currentTidalRes :: Maybe TidalRes
   , stopScrolling :: Effect Unit
   , scrollState :: ScrollState
-  , isPlaying :: Boolean
-  , playerTransition :: { duration :: Number, offset :: Number }
+  , isPlaying :: Maybe { hasSentEvents :: Boolean }
+  , playerTransition :: DurationOffset
   , bufferCache :: Maybe (Ref SampleCache)
   , unsubscribeFromHalogen :: Maybe SubscriptionId
   , playerIsHidden :: Boolean
@@ -94,7 +94,7 @@ type EditorAction = Variant
   ( pauseScroll :: Unit
   , initialize :: Unit
   , setMostRecentCompileErrors :: Array API.CompilerError
-  , showPlayer :: { transition :: { duration :: Number, offset :: Number } }
+  , showPlayer :: { transition :: DurationOffset }
   , resumeScroll :: Unit
   , somethingWentWrong :: Unit
   , input :: EditorInput
@@ -114,13 +114,13 @@ type EditorOutput = Variant
   , editorInErrorState :: Unit
   , editorReceivedCompileError :: Unit
   , pauseScroll :: Unit
-  , showPlayer :: { transition :: { duration :: Number, offset :: Number } }
+  , showPlayer :: { transition :: DurationOffset }
   )
 
 type MainAction = Variant
   ( initialize :: Unit
   , handlePlayerOutput :: PlayerOutput
-  , setIsPlaying :: Boolean
+  , setIsPlaying :: Maybe { hasSentEvents :: Boolean }
   , setAudioContext :: AudioContext
   , setCursor :: Int
   , setTidalRes :: TidalRes
@@ -132,32 +132,34 @@ type MainAction = Variant
   , setStopScrolling :: Effect Unit
   )
 
+type DurationOffset = { duration :: Number, offset :: Number }
+
 type PlayerAction = Variant
   ( input :: PlayerInput
   , choosePlaylist :: Playlist
   , pressPlay :: Unit
   , pressStop :: Unit
-  , hidePlayer :: { transition :: { duration :: Number, offset :: Number } }
+  , hidePlayer :: { transition :: DurationOffset }
   )
 
 type PlayerInput =
   { playlist :: Playlist
-  , isPlaying :: Boolean
-  , hiddenInstr :: { transition :: { duration :: Number, offset :: Number }, hidden :: Boolean }
+  , isPlaying :: Maybe { hasSentEvents :: Boolean }
+  , hiddenInstr :: { transition :: DurationOffset, hidden :: Boolean }
   }
 
 type PlayerOutput = Variant
   ( choosePlaylist :: Playlist
   , pressPlay :: Unit
   , pressStop :: Unit
-  , hidePlayer :: { transition :: { duration :: Number, offset :: Number } }
+  , hidePlayer :: { transition :: DurationOffset }
   )
 
 type PlayerState =
   { playlist :: Playlist
-  , hiddenInstr :: { transition :: { duration :: Number, offset :: Number }, hidden :: Boolean }
-  , isPlaying :: Boolean
-  , hasPlayedOnce :: Boolean
+  , hiddenInstr :: { transition :: DurationOffset, hidden :: Boolean }
+  , isPlaying :: Maybe { hasSentEvents :: Boolean }
+  , hasSentEventsOnce :: Boolean
   , hasHiddenOnce :: Boolean
   }
 

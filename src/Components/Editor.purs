@@ -3,6 +3,7 @@ module Components.Editor where
 import Prelude
 
 import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, ms, pct, sec)
+import CSS.MyStyles (spin)
 import CSS.Hack.Animation (AnimationPlayState(..), animation, forwards, infinite, iterationCount, normalAnimationDirection)
 import Components.ErrorModal as EM
 import Components.MyAce as MyAce
@@ -54,17 +55,6 @@ pauseScroll
 pauseScroll = inj (Proxy :: _ "pauseScroll") unit
 
 editorClasses = [ "absolute", "w-full", "h-full" ] :: Array String
-
-spin :: CSS
-spin = animation
-  (fromString "spin")
-  (sec 1.2)
-  Linear
-  (sec 0.0)
-  infinite
-  normalAnimationDirection
-  forwards
-  ARunning
 
 flyIn :: CSS
 flyIn = animation

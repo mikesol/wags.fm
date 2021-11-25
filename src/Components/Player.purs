@@ -2,12 +2,13 @@ module Components.Player where
 
 import Prelude
 
-import CSS (TimingFunction(..), opacity, animation, backgroundImage, forwards, fromString, iterationCount, normalAnimationDirection, sec, url)
-import Data.Maybe (Maybe(..))
+import CSS (TimingFunction(..), animation, forwards, fromString, iterationCount, normalAnimationDirection, sec)
+import Data.Maybe (Maybe(..), isJust, maybe)
+import CSS.MyStyles (spin)
 import Data.Monoid (guard)
 import Data.Variant (Variant, inj, match)
-import Effect.Aff (Milliseconds(..), delay)
 import Effect.Aff.Class (class MonadAff)
+-- import Effect.Class.Console as Log
 import Halogen (HalogenM)
 import Halogen as H
 import Halogen.HTML as HH
@@ -66,7 +67,7 @@ component =
     { playlist
     , isPlaying
     , hiddenInstr
-    , hasPlayedOnce: false
+    , hasSentEventsOnce: false
     , hasHiddenOnce: false
     }
 
@@ -74,7 +75,7 @@ component =
     { playlist
     , isPlaying
     , hiddenInstr
-    , hasPlayedOnce
+    , hasSentEventsOnce
     , hasHiddenOnce
     } =
     HH.div
@@ -170,14 +171,32 @@ component =
                               [ HH.div [ classes [ "flex-grow" ] ] []
                               , HH.div [ classes [ "flex-grow-0", "cursor-pointer" ] ]
                                   [ icon
-                                      ( ( if isPlaying then SVGIcons.stop
-                                          else SVGIcons.play
+                                      ( ( case isPlaying of
+                                            Nothing -> SVGIcons.play
+                                            Just { hasSentEvents: true } -> SVGIcons.stop
+                                            Just { hasSentEvents: false } -> SVGIcons.spinner
                                         ) 50 50
                                       )
-                                      [ HE.onClick
-                                          $ const
-                                          $ if isPlaying then pressStop else pressPlay
-                                      ]
+                                      ( ( case isPlaying of
+                                            Nothing ->
+                                              [ HE.onClick
+                                                  $ const
+                                                  $ pressPlay
+                                              ]
+                                            Just { hasSentEvents: true } ->
+                                              [ HE.onClick
+                                                  $ const
+                                                  $ pressStop
+                                              ]
+                                            Just { hasSentEvents: false } -> []
+                                        ) <>
+                                          [ CSS.style do
+                                              case isPlaying of
+                                                Nothing -> pure unit
+                                                Just { hasSentEvents: true } -> pure unit
+                                                Just { hasSentEvents: false } -> spin
+                                          ]
+                                      )
                                   ]
                               , HH.div [ classes [ "flex-grow" ] ] []
                               ]
@@ -201,13 +220,13 @@ component =
               [ HH.div [ classes [ "flex-grow" ] ] []
               , HH.div [ classes [ "flex-grow-0", "flex", "flex-row" ] ]
                   ( [ HH.div [ classes [ "flex-grow" ] ] []
-                    ] <> guard hasPlayedOnce
+                    ] <> guard hasSentEventsOnce
                       [ HH.div
                           [ classes [ "flex-grow-0" ]
                           , CSS.style do
                               -- opacity 0.0
                               animation
-                                (fromString $ if isPlaying then "fadeIn" else "fadeOut")
+                                (fromString $ if maybe false _.hasSentEvents isPlaying then "fadeIn" else "fadeOut")
                                 (sec 0.5)
                                 Linear
                                 (sec $ 0.0)
@@ -237,9 +256,6 @@ component =
   handleAction = match
     { pressPlay: const $ do
         H.raise pressPlay
-        H.liftAff $ delay (Milliseconds 400.0)
-        { isPlaying, hiddenInstr: { hidden } } <- H.get
-        when (isPlaying && not hidden) $ H.raise $ hidePlayer { transition: { duration: 1.2, offset: 3.0 } }
     , pressStop: const $ do
         H.raise pressStop
     , hidePlayer: const $ do
@@ -253,7 +269,7 @@ component =
           { playlist = playlist
           , isPlaying = isPlaying
           , hiddenInstr = hiddenInstr
-          , hasPlayedOnce = i.hasPlayedOnce || isPlaying
+          , hasSentEventsOnce = i.hasSentEventsOnce || isPlaying == Just { hasSentEvents: true }
           , hasHiddenOnce = i.hasHiddenOnce || hiddenInstr.hidden
           }
     }

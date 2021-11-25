@@ -8,7 +8,7 @@ import Control.Controller as C
 import Control.Plus (empty)
 import Data.Foldable (for_)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Variant (inj, match)
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
@@ -58,7 +58,7 @@ component loader =
     , stopWags: mempty
     , stopScrolling: mempty
     , scrollState: T.Paused
-    , isPlaying: false
+    , isPlaying: empty
     , newWagPush: mempty
     , currentTidalRes: empty
     , bufferCache: empty
@@ -168,12 +168,12 @@ component loader =
               , setNewWagPush: listener <<< inj (Proxy :: _ "setNewWagPush")
               , setScrollState: listener <<< inj (Proxy :: _ "setScrollState")
               , setAudioContext: listener <<< inj (Proxy :: _ "setAudioContext")
-              , isPlaying
+              , isPlaying: isJust isPlaying
               , bufferCache:
                   { read: Ref.read bufferCache
                   , write: flip Ref.modify_ bufferCache <<< Map.union
                   }
-              , setIsPlaying: listener <<< inj (Proxy :: _ "setIsPlaying")
+              , setIsPlaying: listener <<< inj (Proxy :: _ "setIsPlaying") <<< if _ then pure { hasSentEvents: false } else Nothing
               , setStopWags: listener <<< inj (Proxy :: _ "setStopWags")
               , currentPlaylist: playlist.sequence
               }
@@ -181,7 +181,7 @@ component loader =
             { listener, stopScrolling, stopWags } <- H.get
             H.liftEffect $ C.stopWags
               { setScrollState: listener <<< inj (Proxy :: _ "setScrollState")
-              , setIsPlaying: listener <<< inj (Proxy :: _ "setIsPlaying")
+              , setIsPlaying: listener <<< inj (Proxy :: _ "setIsPlaying") <<< if _ then pure { hasSentEvents: false } else Nothing
               , stopScrolling
               , setStopScrolling: listener <<< inj (Proxy :: _ "setStopScrolling")
               , stopWags
@@ -198,7 +198,17 @@ component loader =
               }
         }
     , setTidalRes: \tidalRes -> do
-        H.modify_ _ { currentTidalRes = Just tidalRes }
+        { isPlaying: prevIsPlaying } <- H.get
+        H.modify_ \i -> i
+          { currentTidalRes = Just tidalRes
+          , isPlaying = i.isPlaying <#> const { hasSentEvents: true }
+          }
+        when (prevIsPlaying == Just { hasSentEvents: false }) do
+          H.liftEffect hackishlyRemoveInitialSSR
+          H.modify_ _
+            { playerIsHidden = true
+            , playerTransition = { duration: 1.5, offset: 0.0 }
+            }
     , initialize: const do
         ------------- we initialize the whole application with a call to the compiler
         ------------- this makes future calls go way faster
