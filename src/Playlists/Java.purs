@@ -23,37 +23,43 @@ foreign import java4Code :: String
 foreign import java5Code :: String
 foreign import java6Code :: String
 
-duration = Milliseconds (30.0 * 1_000.0) :: Milliseconds
+s2ms :: Number -> Milliseconds
+s2ms = Milliseconds <<< mul 1000.0
 
 playlist :: T.Playlist
 playlist =
   { title: "with ♥ from java"
   , sequence: NEL.NonEmptyList
-      ( { duration
+      ( { duration: s2ms 8.0
         , code: java0Code
         , wag: Java0.wag
         } :|
-          { duration
+          { duration: s2ms 8.0
           , code: java1Code
           , wag: Java1.wag
           }
             :
-              { duration
+              { duration: s2ms 12.0
               , code: java2Code
               , wag: Java2.wag
               }
             :
-              { duration
+              { duration: s2ms 16.0
               , code: java3Code
               , wag: Java3.wag
               }
             :
-              { duration
+              { duration: s2ms 32.0
+              , code: java4Code
+              , wag: Java4.wag
+              }
+            :
+              { duration: s2ms 32.0
               , code: java5Code
               , wag: Java5.wag
               }
             :
-              { duration
+              { duration: s2ms 32.0
               , code: java6Code
               , wag: Java6.wag
               }
