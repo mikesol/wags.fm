@@ -24,6 +24,7 @@ foreign import java5Code :: String
 foreign import java6Code :: String
 
 duration = Milliseconds (30.0 * 1_000.0) :: Milliseconds
+
 playlist :: T.Playlist
 playlist =
   { title: "with ♥ from java"
@@ -40,15 +41,18 @@ playlist =
               { duration
               , code: java2Code
               , wag: Java2.wag
-              }:
+              }
+            :
               { duration
               , code: java3Code
               , wag: Java3.wag
-              }:
+              }
+            :
               { duration
               , code: java5Code
               , wag: Java5.wag
-              }:
+              }
+            :
               { duration
               , code: java6Code
               , wag: Java6.wag
