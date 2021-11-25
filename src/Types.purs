@@ -65,7 +65,7 @@ type MainState =
   , stopScrolling :: Effect Unit
   , scrollState :: ScrollState
   , isPlaying :: Boolean
-  , playerTransitionTime :: Number
+  , playerTransition :: { duration :: Number, offset :: Number }
   , bufferCache :: Maybe (Ref SampleCache)
   , unsubscribeFromHalogen :: Maybe SubscriptionId
   , playerIsHidden :: Boolean
@@ -93,7 +93,7 @@ type EditorAction = Variant
   ( pauseScroll :: Unit
   , initialize :: Unit
   , setMostRecentCompileErrors :: Array API.CompilerError
-  , showPlayer :: { transitionTime :: Number }
+  , showPlayer :: { transition :: { duration :: Number, offset :: Number } }
   , resumeScroll :: Unit
   , somethingWentWrong :: Unit
   , input :: EditorInput
@@ -113,7 +113,7 @@ type EditorOutput = Variant
   , editorInErrorState :: Unit
   , editorReceivedCompileError :: Unit
   , pauseScroll :: Unit
-  , showPlayer :: { transitionTime :: Number }
+  , showPlayer :: { transition :: { duration :: Number, offset :: Number } }
   )
 
 type MainAction = Variant
@@ -135,25 +135,25 @@ type PlayerAction = Variant
   , choosePlaylist :: Playlist
   , pressPlay :: Unit
   , pressStop :: Unit
-  , hidePlayer :: { transitionTime :: Number }
+  , hidePlayer :: { transition :: { duration :: Number, offset :: Number } }
   )
 
 type PlayerInput =
   { playlist :: Playlist
   , isPlaying :: Boolean
-  , hiddenInstr :: { transitionTime :: Number, hidden :: Boolean }
+  , hiddenInstr :: { transition :: { duration :: Number, offset :: Number }, hidden :: Boolean }
   }
 
 type PlayerOutput = Variant
   ( choosePlaylist :: Playlist
   , pressPlay :: Unit
   , pressStop :: Unit
-  , hidePlayer :: { transitionTime :: Number }
+  , hidePlayer :: { transition :: { duration :: Number, offset :: Number } }
   )
 
 type PlayerState =
   { playlist :: Playlist
-  , hiddenInstr :: { transitionTime :: Number, hidden :: Boolean }
+  , hiddenInstr :: { transition :: { duration :: Number, offset :: Number }, hidden :: Boolean }
   , isPlaying :: Boolean
   , hasPlayedOnce :: Boolean
   , hasHiddenOnce :: Boolean

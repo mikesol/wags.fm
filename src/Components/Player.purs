@@ -42,8 +42,8 @@ pressPlay = inj (Proxy :: _ "pressPlay") unit
 
 hidePlayer
   :: forall r
-   . { transitionTime :: Number }
-  -> Variant (hidePlayer :: { transitionTime :: Number } | r)
+   . { transition :: { duration :: Number, offset :: Number  } }
+  -> Variant (hidePlayer :: { transition :: { duration :: Number, offset :: Number } } | r)
 hidePlayer = inj (Proxy :: _ "hidePlayer")
 
 pressStop
@@ -92,9 +92,9 @@ component =
           -- backgroundImage (url background)
           when hasHiddenOnce $ animation
             (fromString $ if hiddenInstr.hidden then "flyUp" else "flyDown")
-            (sec hiddenInstr.transitionTime)
+            (sec hiddenInstr.transition.duration)
             EaseInOut
-            (sec 0.0)
+            (sec hiddenInstr.transition.offset)
             (iterationCount 1.0)
             normalAnimationDirection
             forwards
@@ -221,7 +221,7 @@ component =
                                   , "cursor-pointer"
                                   , "p-3"
                                   ] <> bgStyling
-                              , HE.onClick $ const $ hidePlayer { transitionTime: 0.6 }
+                              , HE.onClick $ const $ hidePlayer { transition: { duration: 0.6, offset: 0.0 } }
                               ]
                               [ HH.text "Edit me" ]
                           ]
@@ -239,11 +239,11 @@ component =
         H.raise pressPlay
         H.liftAff $ delay (Milliseconds 400.0)
         { isPlaying, hiddenInstr: { hidden } } <- H.get
-        when (isPlaying && not hidden) $ H.raise $ hidePlayer { transitionTime: 0.995 }
+        when (isPlaying && not hidden) $ H.raise $ hidePlayer { transition: { duration: 0.7, offset: 0.4 } }
     , pressStop: const $ do
         H.raise pressStop
     , hidePlayer: const $ do
-        H.raise $ hidePlayer { transitionTime: 0.6 }
+        H.raise $ hidePlayer { transition: { duration: 0.6, offset: 0.0 } }
     , choosePlaylist: \playlist -> do
         -- Log.info "choose playlist"
         H.raise pressStop

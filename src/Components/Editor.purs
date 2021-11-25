@@ -35,8 +35,8 @@ import Util (classes, classesS, nelmod)
 
 showPlayer
   :: forall r
-   . Variant (showPlayer :: { transitionTime :: Number } | r)
-showPlayer = inj (Proxy :: _ "showPlayer") { transitionTime: 0.6 }
+   . Variant (showPlayer :: { transition :: { duration :: Number, offset :: Number } } | r)
+showPlayer = inj (Proxy :: _ "showPlayer") { transition: {duration: 0.6, offset: 0.0 } }
 
 resumeScroll
   :: forall r. Variant (resumeScroll :: Unit | r)
@@ -153,6 +153,7 @@ component =
           , "grid"
           , "grid-rows-5"
           , "grid-cols-5"
+          , "overflow-x-hidden"
           ]
       ] $
       [ HH.div

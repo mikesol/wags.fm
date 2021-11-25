@@ -53,7 +53,7 @@ component loader =
   initialState _ =
     { playlist: Java.playlist
     , cursor: -1
-    , playerTransitionTime: 0.6
+    , playerTransition: { duration: 0.6, offset: 0.0 }
     , stopWags: mempty
     , stopScrolling: mempty
     , scrollState: T.Paused
@@ -70,7 +70,7 @@ component loader =
     { cursor
     , playlist
     , isPlaying
-    , playerTransitionTime
+    , playerTransition
     , playerIsHidden
     , scrollState
     } =
@@ -86,7 +86,7 @@ component loader =
           , isPlaying
           , hiddenInstr:
               { hidden: playerIsHidden
-              , transitionTime: playerTransitionTime
+              , transition: playerTransition
               }
           }
           (inj (Proxy :: _ "handlePlayerOutput"))
@@ -97,10 +97,10 @@ component loader =
     -> HalogenM T.MainState T.MainAction Slots o m Unit
   handleAction = match
     { handleEditorOutput: match
-        { showPlayer: \{ transitionTime } -> do
+        { showPlayer: \{ transition } -> do
             H.modify_ _
               { playerIsHidden = false
-              , playerTransitionTime = transitionTime
+              , playerTransition = transition
               }
         , playScroll:
             \{ code
@@ -187,11 +187,11 @@ component loader =
               }
         , choosePlaylist: \playlist -> do
             H.modify_ _ { playlist = playlist }
-        , hidePlayer: \{ transitionTime } -> do
+        , hidePlayer: \{ transition } -> do
             H.liftEffect hackishlyRemoveInitialSSR
             H.modify_ _
               { playerIsHidden = true
-              , playerTransitionTime = transitionTime
+              , playerTransition = transition
               }
         }
     , initialize: const do
