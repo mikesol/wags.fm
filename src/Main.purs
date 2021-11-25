@@ -5,6 +5,7 @@ import Prelude
 import Components.Editor as Editor
 import Components.Player as Player
 import Control.Controller as C
+import Control.Plus (empty)
 import Data.Foldable (for_)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), maybe)
@@ -59,11 +60,12 @@ component loader =
     , scrollState: T.Paused
     , isPlaying: false
     , newWagPush: mempty
-    , bufferCache: Nothing
-    , unsubscribeFromHalogen: Nothing
+    , currentTidalRes: empty
+    , bufferCache: empty
+    , unsubscribeFromHalogen: empty
     , playerIsHidden: false
     , listener: mempty
-    , audioContext: Nothing
+    , audioContext: empty
     }
 
   render
@@ -159,6 +161,7 @@ component loader =
                 maybe (H.liftEffect (Ref.new Map.empty)) pure
             H.liftEffect $ C.playWags
               { cursor
+              , setTidalRes: listener <<< inj (Proxy :: _ "setTidalRes")
               , stopScrolling
               , setStopScrolling: listener <<< inj (Proxy :: _ "setStopScrolling")
               , setCursor: listener <<< inj (Proxy :: _ "setCursor")
@@ -194,6 +197,8 @@ component loader =
               , playerTransition = transition
               }
         }
+    , setTidalRes: \tidalRes -> do
+        H.modify_ _ { currentTidalRes = Just tidalRes }
     , initialize: const do
         ------------- we initialize the whole application with a call to the compiler
         ------------- this makes future calls go way faster

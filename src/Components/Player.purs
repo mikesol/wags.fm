@@ -239,7 +239,7 @@ component =
         H.raise pressPlay
         H.liftAff $ delay (Milliseconds 400.0)
         { isPlaying, hiddenInstr: { hidden } } <- H.get
-        when (isPlaying && not hidden) $ H.raise $ hidePlayer { transition: { duration: 0.7, offset: 0.4 } }
+        when (isPlaying && not hidden) $ H.raise $ hidePlayer { transition: { duration: 1.2, offset: 3.0 } }
     , pressStop: const $ do
         H.raise pressStop
     , hidePlayer: const $ do

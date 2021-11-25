@@ -63,6 +63,8 @@ type SetAudioContext = AudioContext -> Effect Unit
 ----------
 type SetPlaylist = T.PlaylistSequence -> Effect Unit
 ----------
+type SetTidalRes = TidalRes -> Effect Unit
+----------
 type Cursor = Int
 type SetCursor = Int -> Effect Unit
 ----------
@@ -139,6 +141,7 @@ type PlayWagsSig =
   , bufferCache :: BufferCache
   , setIsPlaying :: SetIsPlaying
   , setStopWags :: SetStopWags
+  , setTidalRes :: SetTidalRes
   , currentPlaylist :: T.PlaylistSequence
   }
   -> Effect Unit
@@ -287,6 +290,7 @@ playWags
   , isPlaying
   , setIsPlaying
   , bufferCache
+  , setTidalRes
   , setStopWags
   , currentPlaylist
   , setAudioContext
@@ -316,7 +320,7 @@ playWags
       trigger /\ world <- snd $ triggerWorld (audioCtx /\ (pure (pure {} /\ pure {})))
       unsub <- liftEffect $ subscribe
         (run trigger world { easingAlgorithm } (ffiAudio) piece)
-        (\(_ :: Run TidalRes Analysers) -> pure unit)
+        (\({ res } :: Run TidalRes Analysers) -> setTidalRes res)
       liftEffect do
         setNewWagPush push
         setAudioContext audioCtx

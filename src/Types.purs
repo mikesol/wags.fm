@@ -21,7 +21,7 @@ import Halogen.Query.HalogenM (SubscriptionId)
 import JIT.API as API
 import Type.Proxy (Proxy(..))
 import WAGS.Lib.Tidal (AFuture)
-import WAGS.Lib.Tidal.Types (SampleCache)
+import WAGS.Lib.Tidal.Types (SampleCache, TidalRes)
 import WAGS.WebAPI (AudioContext)
 
 type Cursor = Int
@@ -62,6 +62,7 @@ type MainState =
   { playlist :: Playlist
   , listener :: MainAction -> Effect Unit
   , cursor :: Int
+  , currentTidalRes :: Maybe TidalRes
   , stopScrolling :: Effect Unit
   , scrollState :: ScrollState
   , isPlaying :: Boolean
@@ -122,6 +123,7 @@ type MainAction = Variant
   , setIsPlaying :: Boolean
   , setAudioContext :: AudioContext
   , setCursor :: Int
+  , setTidalRes :: TidalRes
   , setCurrentPlaylist :: PlaylistSequence
   , handleEditorOutput :: EditorOutput
   , setScrollState :: ScrollState
