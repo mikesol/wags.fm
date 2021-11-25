@@ -42,7 +42,7 @@ pressPlay = inj (Proxy :: _ "pressPlay") unit
 
 hidePlayer
   :: forall r
-   . { transition :: { duration :: Number, offset :: Number  } }
+   . { transition :: { duration :: Number, offset :: Number } }
   -> Variant (hidePlayer :: { transition :: { duration :: Number, offset :: Number } } | r)
 hidePlayer = inj (Proxy :: _ "hidePlayer")
 
