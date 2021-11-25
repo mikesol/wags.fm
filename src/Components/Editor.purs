@@ -2,7 +2,7 @@ module Components.Editor where
 
 import Prelude
 
-import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, right, ms, pct, sec)
+import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, ms, pct, sec)
 import CSS.Hack.Animation (AnimationPlayState(..), animation, forwards, infinite, iterationCount, normalAnimationDirection)
 import Components.ErrorModal as EM
 import Components.MyAce as MyAce
