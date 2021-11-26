@@ -48,11 +48,11 @@ playlist :: T.Playlist
 playlist =
   { title: "with ♥ from java"
   , sequence: NEL.NonEmptyList
-      ( { duration: s2ms 8.0
+      ( { duration: s2ms 16.0
         , code: java0Code
         , wag: Java0.wag
         } :|
-          { duration: s2ms 8.0
+          { duration: s2ms 12.0
           , code: java1Code
           , wag: Java1.wag
           }

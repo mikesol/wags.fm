@@ -16,13 +16,14 @@ wag = make 4.0
       $ onTag "0"
           ( set (traversed <<< lnv)
               $ lcmap unwrap
-                  \{ clockTime
-                   , normalizedSampleTime
-                   } ->
-                    max 0.0 $ (1.0 - normalizedSampleTime) *
-                      ( 0.8 +
-                          lfo { phase: 0.0, freq: 8.0, amp: 0.2 } clockTime
-                      )
+                  \{ normalizedSampleTime, clockTime } -> 0.8 +
+                    lfo
+                      { phase: 0.0
+                      , freq: 12.0 - 8.0 * normalizedSampleTime
+                      , amp: 0.2
+                      }
+                      clockTime
+
           )
       $ parse_ "BBPL1;0"
   , sounds: Gamelan.sounds
