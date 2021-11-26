@@ -19,6 +19,7 @@ wag = make 4.0
                   $ add 0.8 <<<
                       lfo { phase: 0.0, freq: 8.0, amp: 0.2 }
           )
-      $ parse_ "BBPL1;0 BPPL7"
+      $ onTag "1" (set (traversed <<< lnv) (const 0.2))
+      $ parse_ "BBPL1;0 [BPPL7,SBSL3;1]"
   , sounds: Gamelan.sounds
   }

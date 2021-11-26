@@ -25,6 +25,6 @@ wag = make 4.0
                       clockTime
 
           )
-      $ parse_ "BBPL1;0"
+      $ parse_ "BBPL1;0 BPPL7"
   , sounds: Gamelan.sounds
   }
