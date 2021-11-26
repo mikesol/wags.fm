@@ -1,4 +1,4 @@
-module Playlists.LoFi.LoFi0 where
+module Playlists.LoFi.LoFi00 where
 
 import Prelude
 
@@ -36,8 +36,6 @@ wag =
               (set (traversed <<< lnr) $ lcmap unwrap \{ normalizedSampleTime: t } -> 0.7 - t * 0.2)
           $ onTag "kt"
               (set (traversed <<< lnr) $ lcmap unwrap \{ normalizedSampleTime: t } -> min 1.0 (0.6 + t * 0.8))
-          $ parse_ """[psr:3 [~ chin*4]]
-          [~ psr:3;ph ~ psr:3;ph ~ ] ,
-          [~ ~ ~ <psr:1;print kurt:0;print> ] kurt:5;kt ,
-          ~ ~ pluck:1;pk ~ ~ ~ ~ ~ """
+          $ parse_ """[psr:3 ~]
+          [~ psr:3;ph ~ psr:3;ph ~ ] """
     }

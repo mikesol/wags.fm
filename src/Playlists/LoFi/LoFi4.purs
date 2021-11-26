@@ -76,5 +76,4 @@ wag =
                   )
               )
           ) $ s """~ insect:2 ~ insect stomp:4*3 insect:1 ~ speechless:2 ~ , speechless:5 speechless:3 speechless:4 speechless:1 speechless:2 """
-    , title: "lo fi"
     }

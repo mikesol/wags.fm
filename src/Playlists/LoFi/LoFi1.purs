@@ -41,5 +41,4 @@ wag =
           [~ ~ ~ <psr:1;print kurt:0;print> ] kurt:5;kt ,
           ~ ~ pluck:1;pk ~ ~ ~ ~ ~ """
     , earth: s "~ insect:2 ~ insect ~ insect:1"
-    , title: "lo fi"
     }

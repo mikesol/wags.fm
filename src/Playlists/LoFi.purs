@@ -7,6 +7,7 @@ import Data.List.NonEmpty as NEL
 import Data.NonEmpty ((:|))
 import Data.Time.Duration (Milliseconds(..))
 import Types as T
+import Playlists.LoFi.LoFi00 as LoFi00
 import Playlists.LoFi.LoFi0 as LoFi0
 import Playlists.LoFi.LoFi1 as LoFi1
 import Playlists.LoFi.LoFi2 as LoFi2
@@ -14,6 +15,7 @@ import Playlists.LoFi.LoFi3 as LoFi3
 import Playlists.LoFi.LoFi4 as LoFi4
 import Playlists.LoFi.LoFi5 as LoFi5
 
+foreign import loFi00Code :: String
 foreign import loFi0Code :: String
 foreign import loFi1Code :: String
 foreign import loFi2Code :: String
@@ -28,14 +30,19 @@ playlist :: T.Playlist
 playlist =
   { title: "sweet & lo-fi"
   , sequence: NEL.NonEmptyList
-      ( { duration: s2ms 16.0
-        , code: loFi0Code
-        , wag: LoFi0.wag
+      ( { duration: s2ms 12.0
+        , code: loFi00Code
+        , wag: LoFi00.wag
         } :|
-          { duration: s2ms 32.0
-          , code: loFi1Code
-          , wag: LoFi1.wag
+          { duration: s2ms 16.0
+          , code: loFi0Code
+          , wag: LoFi0.wag
           }
+            :
+              { duration: s2ms 32.0
+              , code: loFi1Code
+              , wag: LoFi1.wag
+              }
             :
               { duration: s2ms 32.0
               , code: loFi2Code
