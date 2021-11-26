@@ -8,7 +8,6 @@ import CSS.MyStyles (spin)
 import Data.Monoid (guard)
 import Data.Variant (Variant, inj, match)
 import Effect.Aff.Class (class MonadAff)
--- import Effect.Class.Console as Log
 import Halogen (HalogenM)
 import Halogen as H
 import Halogen.HTML as HH

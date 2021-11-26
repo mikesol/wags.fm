@@ -1,4 +1,4 @@
-module Playlists.LoFi.LoFi2 where
+module Playlists.LoFi.LoFi3 where
 
 import Prelude
 
@@ -7,10 +7,10 @@ import Data.Newtype (unwrap)
 import Data.Profunctor (lcmap)
 import Math ((%))
 import WAGS.Create.Optionals (highpass, pan)
+import WAGS.Lib.Learn.Oscillator (lfo)
+import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.FX (fx, goodbye, hello)
 import WAGS.Lib.Tidal.Tidal (lnr, lnv, lvt, make, onTag, parse_, s)
-import WAGS.Lib.Tidal (AFuture)
-import WAGS.Lib.Learn.Oscillator (lfo)
 
 m2 = 4.0 * 1.0 * 60.0 / 111.0 :: Number
 
@@ -18,14 +18,14 @@ wag :: AFuture
 wag =
   make (m2 * 2.0)
     { earth: s
-        $ set (traversed <<< _Just <<< lnr)
-            ( lcmap unwrap \{ normalizedLittleCycleTime: t } ->
-                1.0 + t * 0.1
-            )
+        $ onTag "nn"
+              (set (traversed <<< lnv) $ (const 0.25))
         $ parse_
-            """tink:1 tink:2 tink:3 tink:0
-        tink:4 tink:2 tink:3 tink:1
-        tink:2 tink:0 tink:3 """
+            """tink:1 ~ ~ tink:0
+        tink:4 ~ ~ tink:1
+        tink:2 ~ ~ , ~ newnotes:2;nn newnotes:3;nn newnotes:4;nn
+        newnotes:2;nn newnotes:3;nn newnotes:4;nn newnotes:6;nn
+        ~ newnotes:7;nn newnotes:1;nn newnotes:8;nn """
     , wind:
         map
           ( set lvt
