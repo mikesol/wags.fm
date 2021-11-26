@@ -11,7 +11,7 @@ import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Tidal (make, parse_, onTag, lnv, s)
 
 wag :: AFuture
-wag = make 4.0
+wag = make 5.0
   { earth: s
       $ onTag "0"
           ( set (traversed <<< lnv)
@@ -25,6 +25,6 @@ wag = make 4.0
                       clockTime
 
           )
-      $ parse_ "BBPL1;0 BPPL7"
+      $ parse_ "BBPL1;0 ~ ~ BPPL7 ~"
   , sounds: Gamelan.sounds
   }
