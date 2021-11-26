@@ -38,13 +38,17 @@ wag =
                       $ highpass (200.0 + mody * 100.0) hello
           ) $ s
           $ onTag "ph"
-              (set (traversed <<< lnr) $ lcmap unwrap \{ normalizedSampleTime: t } -> min 1.2 (1.0 + t * 0.3))
+              (set (traversed <<< lnr)
+              $ lcmap unwrap \{ normalizedSampleTime: t } -> min 1.2 (1.0 + t * 0.3))
           $ onTag "print"
-              (set (traversed <<< lnv) $ lcmap unwrap \{ normalizedSampleTime: _ } -> 0.2)
+              (set (traversed <<< lnv)
+              $ lcmap unwrap \{ normalizedSampleTime: _ } -> 0.2)
           $ onTag "pk"
-              (set (traversed <<< lnr) $ lcmap unwrap \{ normalizedSampleTime: t } -> 0.7 - t * 0.2)
+              (set (traversed <<< lnr)
+              $ lcmap unwrap \{ normalizedSampleTime: t } -> 0.7 - t * 0.2)
           $ onTag "kt"
-              (set (traversed <<< lnr) $ lcmap unwrap \{ normalizedSampleTime: t } -> min 1.0 (0.6 + t * 0.8))
+              (set (traversed <<< lnr)
+               $ lcmap unwrap \{ normalizedSampleTime: t } -> min 1.0 (0.6 + t * 0.8))
           $ parse_
               """[psr:3 [~ chin*4]]
           [~ psr:3;ph psr:3;ph ~ ] ,
