@@ -33,12 +33,12 @@ playlist =
           , wag: Dots1.wag
           }
             :
-              { duration: s2ms 8.0
+              { duration: s2ms 20.0
               , code: dots2Code
               , wag: Dots2.wag
               }
             :
-              { duration: s2ms 8.0
+              { duration: s2ms 30.0
               , code: dots3Code
               , wag: Dots3.wag
               }

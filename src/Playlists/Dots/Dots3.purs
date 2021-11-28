@@ -14,13 +14,13 @@ import WAGS.Lib.Tidal.Samples (littleCycleTime)
 
 wag :: AFuture
 wag =
-  make 1.0
+  make 1.9
     { earth: s $
-        """newnotes:0 ~
-      <newnotes:2 notes:13 newnotes:14> ~
-      <newnotes:4 newnotes:10> ~
-      <newnotes:6 newnotes:14> ~
-      <notes:8 newnotes:9>"""
+        """notes:0 ~
+      <notes:2 notes:13 notes:14> ~
+      <notes:4 notes:10> ~
+      <notes:6 notes:14> ~
+      <notes:8 notes:9>"""
     , fire:
         map
           ( set lvt
@@ -35,10 +35,10 @@ wag =
                           hello
                       }
           ) $ s $
-          """~ <newnotes:1 notes:8>
+          """~ <notes:1 notes:8>
       ~ notes:3
-      ~ <newnotes:5 notes:9 newnotes:2>
-      ~ newnotes:7 ~"""
+      ~ <notes:5 notes:9 notes:2>
+      ~ notes:7 ~"""
     , wind: s
         $ set (traversed <<< _Just <<< lnr)
             (lcmap littleCycleTime (add 0.5 <<< mul 0.5))

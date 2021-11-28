@@ -7,7 +7,7 @@ import Playlists.Dots as Dots
 
 playlists :: Array T.Playlist
 playlists =
-  [ Dots.playlist
+  [ Java.playlist
   , LoFi.playlist
-  , Java.playlist
+  , Dots.playlist
   ]
