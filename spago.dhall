@@ -24,6 +24,7 @@
   , "halogen"
   , "halogen-css"
   , "halogen-subscriptions"
+  , "homogeneous"
   , "identity"
   , "integers"
   , "jit"

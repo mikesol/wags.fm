@@ -21,7 +21,7 @@ import Halogen.Subscription as HS
 import Halogen.VDom.Driver (runUI)
 import JIT.Compile (compile)
 import JIT.Loader (makeLoader, Loader)
-import Playlists.Java as Java
+import Playlists.Dots as Dots
 import Type.Proxy (Proxy(..))
 import Types as T
 import Util (classes)
@@ -52,7 +52,7 @@ component loader =
     }
   where
   initialState _ =
-    { playlist: Java.playlist
+    { playlist: Dots.playlist
     , cursor: -1
     , playerTransition: { duration: 0.6, offset: 0.0 }
     , stopWags: mempty

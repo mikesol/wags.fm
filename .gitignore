@@ -11,4 +11,4 @@
 /dist
 /scripts/.venv
 .purs-repl
-/.vscode/settings.json
+/.vscode/
