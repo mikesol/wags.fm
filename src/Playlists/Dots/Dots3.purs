@@ -12,9 +12,11 @@ import WAGS.Lib.Learn.Oscillator (lfo)
 import WAGS.Lib.Tidal.FX (fx, goodbye, hello)
 import WAGS.Lib.Tidal.Samples (littleCycleTime)
 
+dt = 0.11875 :: Number
+
 wag :: AFuture
 wag =
-  make 1.9
+  make (dt * 9.0)
     { earth: s $
         """notes:0 ~
       <notes:2 notes:13 notes:14> ~

@@ -38,7 +38,7 @@ playlist =
               , wag: Dots2.wag
               }
             :
-              { duration: s2ms 30.0
+              { duration: s2ms 40.0
               , code: dots3Code
               , wag: Dots3.wag
               }
