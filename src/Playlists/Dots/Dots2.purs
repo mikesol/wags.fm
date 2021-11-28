@@ -1,27 +1,5 @@
 module Playlists.Dots.Dots2 where
 
-import Prelude
-
-import Data.Homogeneous.Record (homogeneous, fromHomogeneous)
-import Data.Int (toNumber)
-import Data.Lens (set, traversed)
-import Data.Maybe (maybe)
-import Data.Tuple (fst, snd)
-import Data.Tuple.Nested ((/\))
-import Math (pow)
-import WAGS.Lib.Tidal (AFuture)
-import WAGS.Lib.Tidal.Cycle (cycleFromSample_, cycleLength, r)
-import WAGS.Lib.Tidal.Tidal (i, lnr, make, s, x)
-import WAGS.Lib.Tidal.Types (Sample(..))
-
-wag :: AFuture
-wag =
-  make 1.0
-    { earth: s ""
-    , title: "i m a k e n o i s e"
-    }
-
-{-
 
 import Prelude
 
@@ -30,13 +8,16 @@ import Data.Homogeneous.Record (homogeneous, fromHomogeneous)
 import Data.Int (toNumber)
 import Data.Lens (set, traversed)
 import Data.Maybe (maybe)
+import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
+import Data.Profunctor (lcmap)
 import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\))
 import Math (pow)
 import WAGS.Lib.Tidal (AFuture)
-import WAGS.Lib.Tidal.Cycle (chin, cycleFromSample_, cycleLength, r)
-import WAGS.Lib.Tidal.Tidal (i, lnr, make, s, x)
+import WAGS.Lib.Tidal.Cycle (cycleFromSample_, cycleLength, r)
+import WAGS.Lib.Tidal.Cycle as C
+import WAGS.Lib.Tidal.Tidal (i, lnr, lnv, make, s, x)
 import WAGS.Lib.Tidal.Types (Sample(..))
 
 dt = 0.11875 :: Number
@@ -55,7 +36,17 @@ seq3 = n.g4 :|
 
 seqs = seq0 <> seq1 <> seq2 <> seq3
 
-percs = mapWithIndex (\x _ -> let spl = chin in let md = maybe 0 (add 1) x `mod` 32 in if md == 15 || md == 23 || md == 31 then i spl [spl] else spl) seqs
+mkSnd = (_ `mod` 7) >>> case _ of
+  0 -> C.can_0
+  1 -> C.dr_22 -- C.can_4
+  2 -> C.dr_31 -- C.can_2
+  3 -> C.can_9
+  4 -> C.jungle_3 -- C.can_10
+  5 -> C.can_12
+  6 -> C.chin_1 -- C.can_13
+  _ -> C.can_0
+
+percs = i <^> mapWithIndex (\x _ -> let md = maybe 0 (add 1) x `mod` 32 in let spl = set (traversed <<< traversed <<< lnv) (lcmap unwrap \{ normalizedBigCycleTime } -> min 1.0 $ normalizedBigCycleTime * 4.0) $ mkSnd md in if md == 15 || md == 23 || md == 31 then i spl [spl] else spl) seqs
 
 seq = i <^> seqs
 dscnt = seq >>= maybe r (const n.a4)
@@ -63,7 +54,7 @@ dscnt = seq >>= maybe r (const n.a4)
 wag :: AFuture
 wag =
   make (mul dt $ toNumber $ cycleLength seq)
-    { earth: s $ x seq [ dscnt, i <^> percs ]
+    { earth: s $ x seq [ dscnt, percs ]
     , title: "i m a k e n o i s e"
     }
 
@@ -124,5 +115,3 @@ n =
         , as6: N /\ "notes:6"
         , b6: U /\ "notes:6"
         }
-
--}
