@@ -14,10 +14,43 @@ import WAGS.Lib.Tidal.Cycle (cycleFromSample_, cycleLength, r)
 import WAGS.Lib.Tidal.Tidal (i, lnr, make, s, x)
 import WAGS.Lib.Tidal.Types (Sample(..))
 
+wag :: AFuture
+wag =
+  make 1.0
+    { earth: s ""
+    , title: "i m a k e n o i s e"
+    }
+
+{-
+
+
+import Prelude
+
+import Data.Homogeneous.Record (homogeneous, fromHomogeneous)
+import Data.Int (toNumber)
+import Data.Lens (set, traversed)
+import Data.Maybe (maybe)
+import Data.NonEmpty (NonEmpty, (:|))
+import Data.Tuple (fst, snd)
+import Data.Tuple.Nested ((/\))
+import Math (pow)
+import WAGS.Lib.Tidal (AFuture)
+import WAGS.Lib.Tidal.Cycle (cycleFromSample_, cycleLength, r)
+import WAGS.Lib.Tidal.Tidal (i, lnr, make, s, x)
+import WAGS.Lib.Tidal.Types (Sample(..))
+
 dt = 0.11875 :: Number
 
-seq = i n.g4
+seq0 = n.g4 :|
   [ r, n.g4, n.fs4, r, n.fs4, r, n.e4, r, n.e4, r, n.e4, n.e4, n.e4, n.a4, n.a4, n.g4, r, n.g4, n.fs4, r, n.fs4, r, n.e4, r, n.a4, r, n.fs4, n.d4, r, n.d4, n.e4, n.fs4, n.g4, n.a4, r, n.a4, n.a4 ]
+seq1 = n.g4 :|
+  [ r, n.g4, n.fs4, r, n.fs4, r, n.e4, r, n.e4, r, n.e4, n.e4, n.e4, n.a4, n.a4, n.g4, r, n.g4, n.fs4, r, n.fs4, r, n.fs4, n.e4, r, n.e4, r, n.e4, n.a4, n.fs4, n.d4, r, n.d4, n.e4, r, n.fs4, n.g4, n.a4, r, n.a4, n.a4 ]
+seq2 = n.g4 :|
+  [ r, n.g4, n.fs4, r, n.fs4, r, n.e4, r, n.e4, r, n.e4, n.e4, r, n.e4, r, n.e4, r, n.e4, n.e4, r, n.e4, r, n.e4, r, n.e4, n.e4, n.e4, n.a4, n.a4, n.g4, r, n.g4, n.fs4, r, n.fs4, r, n.e4, r, n.e4, n.d4, n.d4, n.e4, n.fs4, n.g4, n.a4, r, n.a4, n.a4 ]
+seq3 = n.g4 :|
+  [ r, n.g4, n.fs4, r, n.fs4, r, n.e4, r, n.e4, r, n.e4, n.e4, n.e4, n.a4, n.a4, n.g4, r, n.g4, n.fs4, r, n.fs4, r, n.e4, r, n.a4, r, n.fs4, n.d4, r, n.d4, n.e4, n.fs4, n.g4, n.a4, r, n.d4, n.e4, n.fs4, n.g4, n.a4, r, n.d4, n.e4, r, n.d4, n.e4, n.g4, n.a4 ]
+
+seq = i <^> (seq0 <.> seq1 <.> seq2 <.> seq3)
 
 dscnt = seq >>= maybe r (const n.a4)
 
@@ -29,6 +62,22 @@ wag =
     }
 
 data UDN = U | D | N
+
+nappend
+  :: forall f a
+   . Semigroup (f a)
+  => Applicative f
+  => NonEmpty f a
+  -> NonEmpty f a
+  -> NonEmpty f a
+nappend (h0 :| t0) (h1 :| t1) = h0 :| (t0 <> pure h1 <> t1)
+
+infixr 5 nappend as <.>
+
+napply f (h :| t) = f h t
+
+infixr 5 napply as <^>
+
 
 bend :: UDN -> Number
 bend N = 1.0
@@ -80,3 +129,5 @@ n = fromHomogeneous
       , as6: N /\ "notes:6"
       , b6: U /\ "notes:6"
       }
+
+-}
