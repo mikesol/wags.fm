@@ -22,7 +22,6 @@ wag :: AFuture
 wag =
   make (mul dt $ toNumber $ cycleLength seq)
     { earth: s $ seq
-    , title: "i m a k e n o i s e"
     }
 
 data UDN = U | D | N

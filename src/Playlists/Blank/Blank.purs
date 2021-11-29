@@ -9,5 +9,4 @@ wag :: AFuture
 wag =
   make 1.0
     { earth: s "hh"
-    , title: "i m a k e n o i s e"
     }
