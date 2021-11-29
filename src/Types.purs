@@ -26,7 +26,7 @@ import WAGS.WebAPI (AudioContext)
 
 type Cursor = Int
 data ScrollState = Scrolling | Paused | Loading | YourError | OurError
-
+derive instance eqScrollState :: Eq ScrollState
 derive instance genericScrollState :: Generic ScrollState _
 instance showScrollState :: Show ScrollState where
   show = genericShow
@@ -92,6 +92,7 @@ type ModalState =
 ----
 type EditorAction = Variant
   ( pauseScroll :: Unit
+  , moveCursorTo :: Int
   , initialize :: Unit
   , setMostRecentCompileErrors :: Array API.CompilerError
   , showPlayer :: { transition :: DurationOffset }
@@ -114,6 +115,7 @@ type EditorOutput = Variant
   , editorInErrorState :: Unit
   , editorReceivedCompileError :: Unit
   , pauseScroll :: Unit
+  , moveCursorTo :: Int
   , showPlayer :: { transition :: DurationOffset }
   )
 

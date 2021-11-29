@@ -13,7 +13,12 @@ module.exports = (env) => {
 			filename: "bundle.js",
 			clean: true,
 		},
-		plugins: [new HtmlWebpackPlugin({ template: "index.html" })],
+		plugins: [
+			new HtmlWebpackPlugin({
+				favicon: "./src/images/wags.fm.png",
+				template: "index.html",
+			}),
+		],
 		module: {
 			rules: [
 				{

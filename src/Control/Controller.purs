@@ -17,7 +17,7 @@ import Data.List as List
 import Data.List.Types (NonEmptyList(..))
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
-import Data.Newtype (unwrap)
+import Data.Newtype (unwrap, wrap)
 import Data.NonEmpty (NonEmpty, (:|))
 import Data.Tuple (snd)
 import Data.Tuple.Nested ((/\))
@@ -32,9 +32,9 @@ import FRP.Event as Event
 import Foreign (Foreign)
 import Foreign.Index (readProp)
 import JIT.API as API
-import JIT.Loader (Loader)
 import JIT.Compile (compile)
 import JIT.EvalSources (evalSources)
+import JIT.Loader (Loader)
 import Types as T
 import Unsafe.Coerce (unsafeCoerce)
 import WAGS.Interpret (close, constant0Hack, context, contextResume, contextState, makeFFIAudioSnapshot)
@@ -83,6 +83,19 @@ type SetStopWags = Effect Unit -> Effect Unit
 type NewWagPush = AFuture -> Effect Unit
 type SetNewWagPush = (AFuture -> Effect Unit) -> Effect Unit
 
+---
+type MoveCursor =
+  { stopScrolling :: StopScrolling
+  , setStopScrolling :: SetStopScrolling
+  , setScrollState :: SetScrollState
+  , cursor :: Cursor
+  , setCursor :: SetCursor
+  , newWagPush :: NewWagPush
+  , nea :: T.PlaylistSequence
+  }
+  -> Effect Unit
+
+---
 type PauseScrollSig =
   { stopScrolling :: StopScrolling
   , setStopScrolling :: SetStopScrolling
@@ -124,6 +137,16 @@ type PlayScrollSig =
         }
   , bufferCache :: BufferCache
   , audioContext :: AudioContext
+  }
+  -> Effect Unit
+
+type LaunchScrollSig =
+  { cursor :: Cursor
+  , setStopScrolling :: SetStopScrolling
+  , setCursor :: SetCursor
+  , setScrollState :: SetScrollState
+  , newWagPush :: NewWagPush
+  , nea :: T.PlaylistSequence
   }
   -> Effect Unit
 
@@ -174,9 +197,29 @@ pauseScroll :: PauseScrollSig
 pauseScroll { setScrollState, stopScrolling, setStopScrolling } =
   setScrollState T.Paused
     *> stopScrolling
-    -- as we are paused, we rewind the cursor by one to make sure
-    -- that we don't advance the cursor when we resume
     *> setStopScrolling (pure unit)
+
+moveCursor :: MoveCursor
+moveCursor
+  { stopScrolling
+  , setStopScrolling
+  , setScrollState
+  , cursor
+  , setCursor
+  , newWagPush
+  , nea
+  } =
+  stopScrolling
+    *> setStopScrolling (pure unit)
+    *> setScrollState T.Scrolling
+    *> launchScroll
+      { setStopScrolling
+      , setScrollState
+      , cursor
+      , setCursor
+      , newWagPush
+      , nea
+      }
 
 al :: NonEmpty Array ~> NonEmpty List
 al (a :| b) = a :| (List.fromFoldable b)
@@ -196,6 +239,27 @@ isResumable T.Paused = true
 isResumable T.YourError = true
 isResumable T.OurError = true
 isResumable _ = false
+
+launchScroll :: LaunchScrollSig
+launchScroll
+  { cursor
+  , nea
+  , setCursor
+  , newWagPush
+  , setScrollState
+  , setStopScrolling
+  } = do
+  pg <- new cursor
+  stopScrolling <- subscribe
+    (loopEmitter (_.duration >>> unwrap >>> round) (cursor + 1) $ unwrap nea)
+    \{ wag } -> do
+      pg' <- read pg
+      let np = pg' + 1
+      setCursor np
+      write np pg
+      newWagPush wag
+  setScrollState T.Scrolling
+  setStopScrolling stopScrolling
 
 playScroll :: PlayScrollSig
 playScroll
@@ -266,18 +330,14 @@ playScroll
         -- as we want to stay on that example a while and hear
         -- our beautiful creation!!
         let effectiveCursor = cursor - (maybe 0 (const 1) compileOnPlay)
-        liftEffect do
-          pg <- new effectiveCursor
-          stopScrolling <- subscribe
-            (loopEmitter (_.duration >>> unwrap >>> round) (effectiveCursor + 1) $ nea)
-            \{ wag } -> do
-              pg' <- read pg
-              let np = pg' + 1
-              setCursor np
-              write np pg
-              newWagPush wag
-          setScrollState T.Scrolling
-          setStopScrolling stopScrolling
+        liftEffect $ launchScroll
+          { cursor: effectiveCursor
+          , nea: wrap nea
+          , setCursor
+          , newWagPush
+          , setScrollState
+          , setStopScrolling
+          }
 
 playWags :: PlayWagsSig
 playWags

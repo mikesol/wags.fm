@@ -104,6 +104,21 @@ component loader =
               { playerIsHidden = false
               , playerTransition = transition
               }
+        , moveCursorTo: \cursor -> do
+            { listener
+            , newWagPush
+            , playlist
+            , stopScrolling
+            } <- H.get
+            H.liftEffect $ C.moveCursor
+              { cursor
+              , setCursor: listener <<< inj (Proxy :: _ "setCursor")
+              , setScrollState: listener <<< inj (Proxy :: _ "setScrollState")
+              , setStopScrolling: listener <<< inj (Proxy :: _ "setStopScrolling")
+              , newWagPush
+              , stopScrolling
+              , nea: playlist.sequence
+              }
         , playScroll:
             \{ code
              , ourFaultErrorCallback

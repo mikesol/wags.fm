@@ -3,8 +3,8 @@ module Components.Editor where
 import Prelude
 
 import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, ms, pct, sec)
-import CSS.MyStyles (spin)
 import CSS.Hack.Animation (AnimationPlayState(..), animation, forwards, infinite, iterationCount, normalAnimationDirection)
+import CSS.MyStyles (spin)
 import Components.ErrorModal as EM
 import Components.MyAce as MyAce
 import Control.Plus (empty)
@@ -13,6 +13,7 @@ import Data.Foldable (traverse_)
 import Data.Functor.Variant as VF
 import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..), maybe)
+import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.String as String
@@ -176,12 +177,28 @@ component =
                       []
                   ]
               , HH.div [ classes [ "text-pink-600" ] ]
-                  [ let plen = NEL.length playlist.sequence in HH.text $ intercalate " " $ map (\ix -> if cursor `mod` plen >= ix then "⬤" else "◯") (0 .. (plen - 1))
-                  ]
+                  let
+                    plen = NEL.length playlist.sequence
+                  in
+                    intercalate [ HH.span_ [ HH.text " " ] ] $ map
+                      ( \ix ->
+                          [ HH.span
+                              ( let
+                                  -- for now, we keep in place an
+                                  -- imperfect hack by which we pause
+                                  -- the scroll if the cursor is current
+                                  -- even though this is not great UX, it saves us from having to kick off the animation again, which is hard in CSS when there is no reset first
+                                  current = ix == cursor
+                                in
+                                  [ classes [ "cursor-pointer" ]
+                                  , HE.onClick $ const $ if current then inj (Proxy :: _ "pauseScroll") unit else inj (Proxy :: _ "moveCursorTo") ix
+                                  ]
+                              )
+                              [ HH.text $ if cursor `mod` plen >= ix then "⬤" else "◯" ]
+                          ]
+                      )
+                      (0 .. (plen - 1))
               ]
-
-          --HH.div [ classes [  ] ]
-          --  [ HH.text (show (nelmod playlist.sequence cursor).duration) ]
           ]
       , HH.div
           [ classes
@@ -328,7 +345,7 @@ component =
                   _ -> panic
           ]
           [ HH.slot (Proxy :: _ "code")
-              jump
+              pos
               (MyAce.component pos)
               unit
               (inj (Proxy :: _ "handleCodeOutput"))
@@ -350,7 +367,7 @@ component =
             let jump = mjump cursor pos
             H.request
               (Proxy :: _ "code")
-              jump
+              pos
               ( const $ T.MyAceQuery
                   $ VF.inj (Proxy :: _ "setEditorContent")
                   $ Tuple (asMain (nelmod playlist.sequence jump).code) unit
@@ -374,6 +391,9 @@ component =
         , pauseScroll: \_ ->
             H.raise $ inj (Proxy :: _ "pauseScroll") unit
         }
+    , moveCursorTo: H.raise
+        <<< inj (Proxy :: _ "moveCursorTo")
+        <<< (_ - 1)
     , showCompileError: const do
         { mostRecentCompileErrors } <- H.get
         H.modify_ _
