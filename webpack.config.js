@@ -15,7 +15,7 @@ module.exports = (env) => {
 		},
 		plugins: [
 			new HtmlWebpackPlugin({
-				favicon: "./src/images/wags.fm.png",
+				favicon: "./src/images/pink.jpg",
 				template: "index.html",
 			}),
 		],
