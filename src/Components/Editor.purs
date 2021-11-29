@@ -158,7 +158,6 @@ component =
                               ]
                           , HP.target "_blank"
                           , HP.href "https://github.com/mikesol/wagsi/tree/main/cookbook"
-                          , HE.onClick $ const $ showPlayer
                           ]
                           [ HH.text "cookbook" ]
                       , HH.text "."
