@@ -3,7 +3,7 @@ module Components.Editor where
 import Prelude
 
 import CSS (CSS, TimingFunction(..), display, displayNone, fromString, left, ms, pct, sec)
-import CSS.Hack.Animation (AnimationPlayState(..), animation, forwards, infinite, iterationCount, normalAnimationDirection)
+import CSS.Hack.Animation (AnimationPlayState(..), animation, forwards, iterationCount, normalAnimationDirection)
 import CSS.MyStyles (spin)
 import Components.ErrorModal as EM
 import Components.MyAce as MyAce
@@ -16,7 +16,6 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
-import Data.String as String
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, inj, match)
@@ -33,7 +32,7 @@ import SVGIcons as SVGIcons
 import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
 import Types as T
-import Util (classes, classesS, nelmod)
+import Util (classes, classesS, nelmod, asMain)
 
 showPlayer
   :: forall r
@@ -84,16 +83,6 @@ shuffle = left (pct 200.0)
 
 panic :: CSS
 panic = display displayNone
-
-asMain :: String -> String
-asMain = intercalate "\n"
-  <<< map
-    ( (if _ then _ else _)
-        <$> (eq "module " <<< String.take 7)
-        <*> (const "module Main where")
-        <*> identity
-    )
-  <<< String.split (String.Pattern "\n")
 
 type Slots =
   ( modal :: forall query. H.Slot query T.ModalOutput Unit
@@ -156,50 +145,51 @@ component =
               , "md:col-end-1"
               ]
           ]
-          [ HH.div [ classesS "w-full p-3" ]
-              [ HH.div [ classesS "overflow-hidden h-2 mb-2 text-xs flex rounded bg-pink-200" ]
-                  [ HH.div
-                      [ classesS "shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500"
-                      , CSS.style do
-                          animation
-                            (fromString ("creepLeft" <> show (cursor `mod` 2)))
-                            (ms $ ((unwrap (nelmod playlist.sequence cursor).duration)))
-                            Linear
-                            (sec 0.0)
-                            (iterationCount 1.0)
-                            normalAnimationDirection
-                            forwards
-                            case scrollState of
-                              T.Scrolling -> ARunning
-                              T.Loading -> AInitial
-                              _ -> APaused
-                      ]
-                      []
-                  ]
-              , HH.div [ classes [ "text-pink-600" ] ]
-                  let
-                    plen = NEL.length playlist.sequence
-                  in
-                    intercalate [ HH.span_ [ HH.text " " ] ] $ map
-                      ( \ix ->
-                          [ HH.span
-                              ( let
-                                  -- for now, we keep in place an
-                                  -- imperfect hack by which we pause
-                                  -- the scroll if the cursor is current
-                                  -- even though this is not great UX, it saves us from having to kick off the animation again, which is hard in CSS when there is no reset first
-                                  current = ix == cursor
-                                in
-                                  [ classes [ "cursor-pointer" ]
-                                  , HE.onClick $ const $ if current then inj (Proxy :: _ "pauseScroll") unit else inj (Proxy :: _ "moveCursorTo") ix
-                                  ]
-                              )
-                              [ HH.text $ if cursor `mod` plen >= ix then "⬤" else "◯" ]
+          $ guard (NEL.length playlist.sequence > 1)
+              [ HH.div [ classesS "w-full p-3" ]
+                  [ HH.div [ classesS "overflow-hidden h-2 mb-2 text-xs flex rounded bg-pink-200" ]
+                      [ HH.div
+                          [ classesS "shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pink-500"
+                          , CSS.style do
+                              animation
+                                (fromString ("creepLeft" <> show (cursor `mod` 2)))
+                                (ms $ ((unwrap (nelmod playlist.sequence cursor).duration)))
+                                Linear
+                                (sec 0.0)
+                                (iterationCount 1.0)
+                                normalAnimationDirection
+                                forwards
+                                case scrollState of
+                                  T.Scrolling -> ARunning
+                                  T.Loading -> AInitial
+                                  _ -> APaused
                           ]
-                      )
-                      (0 .. (plen - 1))
+                          []
+                      ]
+                  , HH.div [ classes [ "text-pink-600" ] ]
+                      let
+                        plen = NEL.length playlist.sequence
+                      in
+                        intercalate [ HH.span_ [ HH.text " " ] ] $ map
+                          ( \ix ->
+                              [ HH.span
+                                  ( let
+                                      -- for now, we keep in place an
+                                      -- imperfect hack by which we pause
+                                      -- the scroll if the cursor is current
+                                      -- even though this is not great UX, it saves us from having to kick off the animation again, which is hard in CSS when there is no reset first
+                                      current = ix == cursor
+                                    in
+                                      [ classes [ "cursor-pointer" ]
+                                      , HE.onClick $ const $ if current then inj (Proxy :: _ "pauseScroll") unit else inj (Proxy :: _ "moveCursorTo") ix
+                                      ]
+                                  )
+                                  [ HH.text $ if cursor `mod` plen >= ix then "⬤" else "◯" ]
+                              ]
+                          )
+                          (0 .. (plen - 1))
+                  ]
               ]
-          ]
       , HH.div
           [ classes
               [ "row-start-1"
@@ -238,7 +228,7 @@ component =
               ]
           ]
           ( [ HH.div [ classes [ "relative", "flex-grow" ] ]
-                (map mkEditor (0 .. 3))
+                (map mkEditor (0 .. if NEL.length playlist.sequence == 1 then 0 else 3))
             ]
               <>
                 ( case scrollState of
@@ -325,12 +315,13 @@ component =
     mkEditor pos =
       let
         cMod = (i.cursor + pos) `mod` 4
-        jump = mjump i.cursor pos
       in
         HH.div
           [ classes editorClasses
           , CSS.style do
-              case i.cursor of
+              if NEL.length playlist.sequence == 1 then
+                pure unit
+              else case i.cursor of
                 0 -> case pos of
                   0 -> pure unit
                   1 -> left (pct (-150.0))
@@ -362,17 +353,31 @@ component =
         -- as content will only change for something off screen
         -- there should be no flicker
         -- if there is, revisit!
-        when (prevCursor /= cursor) do
-          _ <- (0 .. 3) # traverse \pos -> do
-            let jump = mjump cursor pos
-            H.request
-              (Proxy :: _ "code")
-              pos
-              ( const $ T.MyAceQuery
-                  $ VF.inj (Proxy :: _ "setEditorContent")
-                  $ Tuple (asMain (nelmod playlist.sequence jump).code) unit
-              )
-          mempty
+        when (prevCursor /= cursor) $
+          if
+            -- if there is only one playlist, we don't advance it
+            NEL.length playlist.sequence == 1 then do
+            when (cursor == 0) do
+                -- Log.info $ "Seeting code" <> (asMain (nelmod playlist.sequence 0).code)
+                _ <- H.request
+                  (Proxy :: _ "code")
+                  0
+                  ( const $ T.MyAceQuery
+                      $ VF.inj (Proxy :: _ "setEditorContent")
+                      $ Tuple (asMain (nelmod playlist.sequence 0).code) unit
+                  )
+                mempty
+          else do
+            _ <- (0 .. 3) # traverse \pos -> do
+              let jump = mjump cursor pos
+              H.request
+                (Proxy :: _ "code")
+                pos
+                ( const $ T.MyAceQuery
+                    $ VF.inj (Proxy :: _ "setEditorContent")
+                    $ Tuple (asMain (nelmod playlist.sequence jump).code) unit
+                )
+            mempty
         H.modify_ _
           { cursor = cursor
           , scrollState = scrollState
@@ -429,9 +434,9 @@ component =
               }
           }
     , resumeScroll: const do
-        { cursor, listener } <- H.get
+        { cursor, listener, playlist } <- H.get
         code <- map join $ H.request (Proxy :: _ "code")
-          cursor
+          (if NEL.length playlist.sequence == 1 then 0 else cursor)
           (T.MyAceQuery <<< VF.inj (Proxy :: _ "getEditorContent"))
         -- Log.info (code # maybe "did not get code" (append "got code: "))
         code # traverse_

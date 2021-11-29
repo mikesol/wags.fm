@@ -2,6 +2,7 @@ module Util where
 
 import Prelude
 
+import Data.Array (intercalate)
 import Data.List.NonEmpty as NEL
 import Data.Maybe (fromMaybe)
 import Data.NonEmpty ((:|))
@@ -17,3 +18,13 @@ classesS = classes <<< String.split (String.Pattern " ")
 
 nelmod :: forall a. NEL.NonEmptyList a -> Int -> a
 nelmod nel@(NEL.NonEmptyList (h :| _)) i = fromMaybe h $ NEL.index nel (i `mod` NEL.length nel)
+
+asMain :: String -> String
+asMain = intercalate "\n"
+  <<< map
+    ( (if _ then _ else _)
+        <$> (eq "module " <<< String.take 7)
+        <*> (const "module Main where")
+        <*> identity
+    )
+  <<< String.split (String.Pattern "\n")

@@ -37,6 +37,7 @@ import JIT.EvalSources (evalSources)
 import JIT.Loader (Loader)
 import Types as T
 import Unsafe.Coerce (unsafeCoerce)
+import Util (asMain)
 import WAGS.Interpret (close, constant0Hack, context, contextResume, contextState, makeFFIAudioSnapshot)
 import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)
@@ -290,7 +291,7 @@ playScroll
            } -> makeAff \cb -> do
             setScrollState T.Loading
             compile
-              { code
+              { code: asMain code -- sanitize in case there has been copy and paste
               , loader
               , compileUrl
               , ourFaultErrorCallback: \err -> do
