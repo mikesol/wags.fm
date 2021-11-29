@@ -13,7 +13,6 @@ import Data.Foldable (traverse_)
 import Data.Functor.Variant as VF
 import Data.List.NonEmpty as NEL
 import Data.Maybe (Maybe(..), maybe)
-import Data.Monoid (guard)
 import Data.Newtype (unwrap)
 import Data.Nullable (toMaybe)
 import Data.Traversable (traverse)
@@ -26,6 +25,7 @@ import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.CSS as CSS
 import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties as HP
 import Halogen.Subscription as HS
 import JIT.API as API
 import SVGIcons as SVGIcons
@@ -142,10 +142,30 @@ component =
               , "row-end-1"
               , "col-start-1"
               , "col-end-4"
-              , "md:col-end-1"
+              , if NEL.length playlist.sequence == 1 then "md:col-end-4" else "md:col-end-1"
               ]
           ]
-          $ guard (NEL.length playlist.sequence > 1)
+          $
+            if NEL.length playlist.sequence == 1 then
+              [ HH.div [ classes [ "p-3" ] ]
+                  [ HH.p_
+                      [ HH.text "Looking for inspiration? You can copy and paste any example from the "
+                      , HH.a
+                          [ classes
+                              [ "underline"
+                              , "cursor-pointer"
+                              , "flex-grow-0"
+                              ]
+                          , HP.target "_blank"
+                          , HP.href "https://github.com/mikesol/wagsi/tree/main/cookbook"
+                          , HE.onClick $ const $ showPlayer
+                          ]
+                          [ HH.text "cookbook" ]
+                      , HH.text "."
+                      ]
+                  ]
+              ]
+            else
               [ HH.div [ classesS "w-full p-3" ]
                   [ HH.div [ classesS "overflow-hidden h-2 mb-2 text-xs flex rounded bg-pink-200" ]
                       [ HH.div
@@ -358,15 +378,15 @@ component =
             -- if there is only one playlist, we don't advance it
             NEL.length playlist.sequence == 1 then do
             when (cursor == 0) do
-                -- Log.info $ "Seeting code" <> (asMain (nelmod playlist.sequence 0).code)
-                _ <- H.request
-                  (Proxy :: _ "code")
-                  0
-                  ( const $ T.MyAceQuery
-                      $ VF.inj (Proxy :: _ "setEditorContent")
-                      $ Tuple (asMain (nelmod playlist.sequence 0).code) unit
-                  )
-                mempty
+              --Log.info $ "Seeting code" <> (asMain (nelmod playlist.sequence 0).code)
+              _ <- H.request
+                (Proxy :: _ "code")
+                0
+                ( const $ T.MyAceQuery
+                    $ VF.inj (Proxy :: _ "setEditorContent")
+                    $ Tuple (asMain (nelmod playlist.sequence 0).code) unit
+                )
+              mempty
           else do
             _ <- (0 .. 3) # traverse \pos -> do
               let jump = mjump cursor pos
