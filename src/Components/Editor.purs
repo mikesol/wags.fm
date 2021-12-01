@@ -32,7 +32,7 @@ import SVGIcons as SVGIcons
 import Svg.Renderer.Halogen (icon)
 import Type.Proxy (Proxy(..))
 import Types as T
-import Util (classes, classesS, nelmod, asMain)
+import Util (classes, classesS, nelmod, sanitizePS)
 
 showPlayer
   :: forall r
@@ -234,6 +234,33 @@ component =
           ]
       , HH.div
           [ classes
+              [ "row-start-5"
+              , "row-end-5"
+              , "col-start-1"
+              , "col-end-3"
+              , "flex"
+              , "flex-col"
+              ]
+          ]
+          [ HH.div [ classes [ "flex-grow" ] ] []
+          , HH.div [ classes [ "flex-grow-0", "p-3" ] ]
+              [ HH.span_
+                  [ HH.text "Need help hacking? Check out these "
+                  , HH.a
+                      [ classes
+                          [ "underline"
+                          , "cursor-pointer"
+                          ]
+                      , HP.target "_blank"
+                      , HP.href "https://mikesol.github.io/sf/crash-course"
+                      ]
+                      [ HH.text "docs" ]
+                  , HH.text "."
+                  ]
+              ]
+          ]
+      , HH.div
+          [ classes
               [ "row-start-2"
               , "row-end-6"
               , "col-start-1"
@@ -377,13 +404,13 @@ component =
             -- if there is only one playlist, we don't advance it
             NEL.length playlist.sequence == 1 then do
             when (cursor == 0) do
-              --Log.info $ "Seeting code" <> (asMain (nelmod playlist.sequence 0).code)
+              --Log.info $ "Seeting code" <> (sanitizePS (nelmod playlist.sequence 0).code)
               _ <- H.request
                 (Proxy :: _ "code")
                 0
                 ( const $ T.MyAceQuery
                     $ VF.inj (Proxy :: _ "setEditorContent")
-                    $ Tuple (asMain (nelmod playlist.sequence 0).code) unit
+                    $ Tuple (sanitizePS (nelmod playlist.sequence 0).code) unit
                 )
               mempty
           else do
@@ -394,7 +421,7 @@ component =
                 pos
                 ( const $ T.MyAceQuery
                     $ VF.inj (Proxy :: _ "setEditorContent")
-                    $ Tuple (asMain (nelmod playlist.sequence jump).code) unit
+                    $ Tuple (sanitizePS (nelmod playlist.sequence jump).code) unit
                 )
             mempty
         H.modify_ _
