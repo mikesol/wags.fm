@@ -2,15 +2,14 @@ module Playlists.Dots.Dots3 where
 
 import Prelude
 
-import WAGS.Lib.Tidal (AFuture)
-import WAGS.Lib.Tidal.Tidal (lnr, lvt, make, parse_, s)
-import Data.Lens (set, traversed, _Just)
+import Data.Lens (set)
 import Data.Newtype (unwrap)
 import Data.Profunctor (lcmap)
 import WAGS.Create.Optionals (highpass, pan)
 import WAGS.Lib.Learn.Oscillator (lfo)
+import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.FX (fx, goodbye, hello)
-import WAGS.Lib.Tidal.Samples (littleCycleTime)
+import WAGS.Lib.Tidal.Tidal (changeRate, lvt, make, parse_, s)
 
 dt = 0.11875 :: Number
 
@@ -42,8 +41,8 @@ wag =
       ~ <notes:5 notes:9 notes:2>
       ~ notes:7 ~"""
     , wind: s
-        $ set (traversed <<< _Just <<< lnr)
-            (lcmap littleCycleTime (add 0.5 <<< mul 0.5))
+        $ map (changeRate
+            (_.littleCycleTime >>> (add 0.5 <<< mul 0.5)))
         $ parse_
         $ "chin:0 ~ chin:1 ~ ~ chin:2 ~ chin:3"
     }

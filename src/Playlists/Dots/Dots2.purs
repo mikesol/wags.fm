@@ -8,6 +8,7 @@ import Data.Homogeneous.Record (homogeneous, fromHomogeneous)
 import Data.Int (toNumber)
 import Data.Lens (set, traversed)
 import Data.Maybe (maybe)
+import Data.Variant.Maybe as VM
 import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor (lcmap)
@@ -49,7 +50,7 @@ mkSnd = (_ `mod` 7) >>> case _ of
 percs = i <^> mapWithIndex (\x _ -> let md = maybe 0 (add 1) x `mod` 32 in let spl = set (traversed <<< traversed <<< lnv) (lcmap unwrap \{ normalizedBigCycleTime } -> min 1.0 $ normalizedBigCycleTime * 4.0) $ mkSnd md in if md == 15 || md == 23 || md == 31 then i spl [spl] else spl) seqs
 
 seq = i <^> seqs
-dscnt = seq >>= maybe r (const n.a4)
+dscnt = seq >>= VM.maybe r (const n.a4)
 
 wag :: AFuture
 wag =
