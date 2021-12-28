@@ -15,7 +15,7 @@ import Data.Int (round)
 import Data.List (List)
 import Data.List as List
 import Data.List.Types (NonEmptyList(..))
-import Data.Map as Map
+import Foreign.Object as Object
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.NonEmpty (NonEmpty, (:|))
@@ -403,4 +403,4 @@ playWags
           }
 
 initialSampleCache :: SampleCache
-initialSampleCache = Map.empty
+initialSampleCache = Object.empty

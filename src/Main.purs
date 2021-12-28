@@ -7,7 +7,7 @@ import Components.Player as Player
 import Control.Controller as C
 import Control.Plus (empty)
 import Data.Foldable (for_)
-import Data.Map as Map
+import Foreign.Object as Object
 import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Variant (inj, match)
 import Effect (Effect)
@@ -131,7 +131,7 @@ component loader =
               , playlist
               , audioContext
               } <- H.get
-              bufferCache <- H.get >>= _.bufferCache >>> maybe (H.liftEffect (Ref.new Map.empty)) pure
+              bufferCache <- H.get >>= _.bufferCache >>> maybe (H.liftEffect (Ref.new Object.empty)) pure
               -- Log.info ("Setting yfec" <> show scrollState)
               for_ audioContext \ctx -> H.liftEffect $ C.playScroll
                 { cursor
@@ -173,7 +173,7 @@ component loader =
             { cursor, listener, stopScrolling, isPlaying, playlist } <- H.get
             bufferCache <- H.get >>=
               _.bufferCache >>>
-                maybe (H.liftEffect (Ref.new Map.empty)) pure
+                maybe (H.liftEffect (Ref.new Object.empty)) pure
             H.liftEffect $ C.playWags
               { cursor
               , setTidalRes: listener <<< inj (Proxy :: _ "setTidalRes")
@@ -186,7 +186,7 @@ component loader =
               , isPlaying: isJust isPlaying
               , bufferCache:
                   { read: Ref.read bufferCache
-                  , write: flip Ref.modify_ bufferCache <<< Map.union
+                  , write: flip Ref.modify_ bufferCache <<< Object.union
                   }
               , setIsPlaying: listener <<< inj (Proxy :: _ "setIsPlaying") <<< if _ then pure { hasSentEvents: false } else Nothing
               , setStopWags: listener <<< inj (Proxy :: _ "setStopWags")
@@ -244,7 +244,7 @@ component loader =
             , successCallback: mempty
             }
         { emitter, listener } <- H.liftEffect $ HS.create
-        bufferCache <- H.liftEffect $ Ref.new (Map.empty :: SampleCache)
+        bufferCache <- H.liftEffect $ Ref.new (Object.empty :: SampleCache)
         unsubscribeFromHalogen <- H.subscribe emitter
         H.modify_ _
           { unsubscribeFromHalogen = Just unsubscribeFromHalogen
