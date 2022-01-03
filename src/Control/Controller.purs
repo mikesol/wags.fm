@@ -15,7 +15,6 @@ import Data.Int (round)
 import Data.List (List)
 import Data.List as List
 import Data.List.Types (NonEmptyList(..))
-import Foreign.Object as Object
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (unwrap, wrap)
 import Data.NonEmpty (NonEmpty, (:|))
@@ -26,11 +25,13 @@ import Effect.Aff (error, launchAff_, makeAff, try)
 import Effect.Class (liftEffect)
 import Effect.Exception (Error)
 import Effect.Ref (new, read, write)
+import Effect.Ref as Ref
 import FRP.Behavior (Behavior, behavior)
 import FRP.Event (create, subscribe)
 import FRP.Event as Event
 import Foreign (Foreign)
 import Foreign.Index (readProp)
+import Foreign.Object as Object
 import JIT.API as API
 import JIT.Compile (compile)
 import JIT.EvalSources (evalSources)
@@ -42,8 +43,9 @@ import WAGS.Interpret (close, constant0Hack, context, contextResume, contextStat
 import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Engine (engine)
+import WAGS.Lib.Tidal.Tidal (openFuture)
 import WAGS.Lib.Tidal.Types (SampleCache, TidalRes)
-import WAGS.Lib.Tidal.Util (doDownloads')
+import WAGS.Lib.Tidal.Util (doDownloads', r2b)
 import WAGS.Run (run, Run)
 import WAGS.WebAPI (AudioContext)
 
@@ -373,11 +375,13 @@ playWags
     stopScrolling
     { event, push } <- create
     launchAff_ do
+      rf <- liftEffect $ Ref.new (openFuture (wrap 1.0))
+      usub0 <- liftEffect $ subscribe event \e -> Ref.write e rf
       when (waStatus /= "running") (toAffE $ contextResume audioCtx)
       map fold $ parTraverse
         (doDownloads' audioCtx bufferCache (pure $ pure unit) identity)
         (map _.wag currentPlaylist)
-      let FullSceneBuilder { triggerWorld, piece } = engine (pure unit) (map (const <<< const) event) $ (Left (readableToBehavior bufferCache.read))
+      let FullSceneBuilder { triggerWorld, piece } = engine (pure unit) (map (const <<< const) (r2b rf)) $ (Left (readableToBehavior bufferCache.read))
       trigger /\ world <- snd $ triggerWorld (audioCtx /\ (pure (pure {} /\ pure {})))
       unsub <- liftEffect $ subscribe
         (run trigger world { easingAlgorithm } (ffiAudio) piece)
@@ -387,6 +391,7 @@ playWags
         setAudioContext audioCtx
         setStopWags do
           unsub
+          usub0
           close audioCtx
         playScroll
           { cursor
