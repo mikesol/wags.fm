@@ -44,7 +44,7 @@ import WAGS.Lib.Learn (FullSceneBuilder(..), Analysers, easingAlgorithm)
 import WAGS.Lib.Tidal (AFuture)
 import WAGS.Lib.Tidal.Engine (engine)
 import WAGS.Lib.Tidal.Tidal (openFuture)
-import WAGS.Lib.Tidal.Types (SampleCache, TidalRes)
+import WAGS.Lib.Tidal.Types (emptyCtrl, SampleCache, TidalRes)
 import WAGS.Lib.Tidal.Util (doDownloads', r2b)
 import WAGS.Run (run, Run)
 import WAGS.WebAPI (AudioContext)
@@ -381,7 +381,7 @@ playWags
       map fold $ parTraverse
         (doDownloads' audioCtx bufferCache (pure $ pure unit) identity)
         (map _.wag currentPlaylist)
-      let FullSceneBuilder { triggerWorld, piece } = engine (pure unit) (map (const <<< const) (r2b rf)) $ (Left (readableToBehavior bufferCache.read))
+      let FullSceneBuilder { triggerWorld, piece } = engine (pure unit) (map (const <<< const) (r2b rf)) (pure emptyCtrl) $ (Left (readableToBehavior bufferCache.read))
       trigger /\ world <- snd $ triggerWorld (audioCtx /\ (pure (pure {} /\ pure {})))
       unsub <- liftEffect $ subscribe
         (run trigger world { easingAlgorithm } (ffiAudio) piece)
