@@ -2,7 +2,7 @@ module Playlists.Java.Java3 where
 
 
 import WAGS.Lib.Sounds.Gamelan as Gamelan
-import WAGS.Lib.Tidal (AFuture)
+import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Tidal.Tidal (make, s)
 
 wag :: AFuture

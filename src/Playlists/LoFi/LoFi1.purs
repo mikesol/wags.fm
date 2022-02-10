@@ -9,7 +9,7 @@ import Math ((%))
 import WAGS.Create.Optionals (highpass, pan)
 import WAGS.Lib.Tidal.FX (fx, goodbye, hello)
 import WAGS.Lib.Tidal.Tidal (lnr, lnv, lvt, make, onTag, parse_, s)
-import WAGS.Lib.Tidal (AFuture)
+import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Learn.Oscillator (lfo)
 
 m2 = 4.0 * 1.0 * 60.0 / 111.0 :: Number

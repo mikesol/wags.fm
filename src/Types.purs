@@ -20,8 +20,7 @@ import Effect.Ref (Ref)
 import Halogen.Query.HalogenM (SubscriptionId)
 import JIT.API as API
 import Type.Proxy (Proxy(..))
-import WAGS.Lib.Tidal (AFuture)
-import WAGS.Lib.Tidal.Types (SampleCache, TidalRes)
+import WAGS.Lib.Tidal.Types (AFuture, SampleCache, TidalRes)
 import WAGS.WebAPI (AudioContext)
 
 type Cursor = Int

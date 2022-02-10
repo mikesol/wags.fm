@@ -7,7 +7,7 @@ import Data.Lens (_Just, set, traversed)
 import Data.Profunctor (lcmap)
 import WAGS.Lib.Learn.Oscillator (lfo)
 import WAGS.Lib.Sounds.Gamelan as Gamelan
-import WAGS.Lib.Tidal (AFuture)
+import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Tidal.Tidal (make, parse_, onTag, lnv, s)
 
 wag :: AFuture
