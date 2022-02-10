@@ -9,7 +9,7 @@ import WAGS.Create.Optionals (highpass, pan)
 import WAGS.Lib.Learn.Oscillator (lfo)
 import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Tidal.FX (fx, goodbye, hello)
-import WAGS.Lib.Tidal.Tidal (changeRate, lvt, make, parse_, s)
+import WAGS.Lib.Tidal.Tidal (changeRate, lvt, make, parse, s)
 
 dt = 0.11875 :: Number
 
@@ -43,6 +43,6 @@ wag =
     , wind: s
         $ map (changeRate
             (_.littleCycleTime >>> (add 0.5 <<< mul 0.5)))
-        $ parse_
+        $ parse
         $ "chin:0 ~ chin:1 ~ ~ chin:2 ~ chin:3"
     }

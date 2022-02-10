@@ -8,7 +8,7 @@ import Data.Profunctor (lcmap)
 import WAGS.Lib.Learn.Oscillator (lfo)
 import WAGS.Lib.Sounds.Gamelan as Gamelan
 import WAGS.Lib.Tidal.Types (AFuture)
-import WAGS.Lib.Tidal.Tidal (make, parse_, onTag, lnv, s)
+import WAGS.Lib.Tidal.Tidal (make, parse, onTag, lnv, s)
 
 wag :: AFuture
 wag = make 5.0
@@ -25,6 +25,6 @@ wag = make 5.0
                       clockTime
 
           )
-      $ parse_ "BBPL1;0 ~ ~ BPPL7 ~"
+      $ parse "BBPL1;0 ~ ~ BPPL7 ~"
   , sounds: Gamelan.sounds
   }

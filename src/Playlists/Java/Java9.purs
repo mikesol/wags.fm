@@ -8,7 +8,7 @@ import Data.Profunctor (lcmap)
 import WAGS.Lib.Sounds.Gamelan as Gamelan
 import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Tidal.Samples (normalizedSampleTime, sampleTime)
-import WAGS.Lib.Tidal.Tidal (lnr, lnv, make, onTag, parse_, s)
+import WAGS.Lib.Tidal.Tidal (lnr, lnv, make, onTag, parse, s)
 
 wag :: AFuture
 wag = make 4.0
@@ -22,7 +22,7 @@ wag = make 4.0
   BBPL3h BBPL2h BBPL4 BBPL2h"""
   , wind: s
       $ onTag "g1" (set (traversed <<< lnv) (const 0.5))
-      $ parse_ """<[GBPL1;g1 TAK ~ LUNG DHA ~ ~ TAK]
+      $ parse """<[GBPL1;g1 TAK ~ LUNG DHA ~ ~ TAK]
       [[[GBPL3 , KtSL2s] DHA*2 ~ DHA] [~ DHUNG ~ TONG]]>"""
   , sounds: Gamelan.sounds
   }

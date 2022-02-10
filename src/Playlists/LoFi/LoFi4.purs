@@ -10,7 +10,7 @@ import WAGS.Create.Optionals (highpass, pan)
 import WAGS.Lib.Learn.Oscillator (lfo)
 import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Tidal.FX (fx, goodbye, hello)
-import WAGS.Lib.Tidal.Tidal (lnr, lnv, lvt, make, onTag, parse_, s)
+import WAGS.Lib.Tidal.Tidal (lnr, lnv, lvt, make, onTag, parse, s)
 
 m2 = 4.0 * 1.0 * 60.0 / 111.0 :: Number
 
@@ -20,7 +20,7 @@ wag =
     { earth: s
         $ onTag "nn"
               (set (traversed <<< lnv) $ (const 0.25))
-        $ parse_
+        $ parse
             """tink:1 ~ ~ tink:0
         tink:4 ~ ~ tink:1
         tink:2 ~ ~ , ~ newnotes:2;nn newnotes:3;nn newnotes:4;nn
@@ -49,7 +49,7 @@ wag =
           $ onTag "kt"
               (set (traversed <<< lnr)
                $ lcmap unwrap \{ normalizedSampleTime: t } -> min 1.0 (0.6 + t * 0.8))
-          $ parse_
+          $ parse
               """[psr:3 [~ chin*4]]
           [~ psr:3;ph psr:3;ph ~ ] ,
           [~ ~ ~ <psr:10;print kurt:8;print> ] kurt:10;kt ,

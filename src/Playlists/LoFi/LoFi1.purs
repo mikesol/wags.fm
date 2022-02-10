@@ -8,7 +8,7 @@ import Data.Profunctor (lcmap)
 import Math ((%))
 import WAGS.Create.Optionals (highpass, pan)
 import WAGS.Lib.Tidal.FX (fx, goodbye, hello)
-import WAGS.Lib.Tidal.Tidal (lnr, lnv, lvt, make, onTag, parse_, s)
+import WAGS.Lib.Tidal.Tidal (lnr, lnv, lvt, make, onTag, parse, s)
 import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Learn.Oscillator (lfo)
 
@@ -40,7 +40,7 @@ wag =
           $ onTag "kt"
               (set (traversed <<< lnr)
               $ lcmap unwrap \{ normalizedSampleTime: t } -> min 1.0 (0.6 + t * 0.8))
-          $ parse_ """[psr:3 [~ chin*4]]
+          $ parse """[psr:3 [~ chin*4]]
           [~ psr:3;ph ~ psr:3;ph ~ ] ,
           [~ ~ ~ <psr:1;print kurt:0;print> ] kurt:5;kt ,
           ~ ~ pluck:1;pk ~ ~ ~ ~ ~ """

@@ -8,7 +8,7 @@ import WAGS.Lib.Learn.Oscillator (lfo)
 import WAGS.Lib.Sounds.Gamelan as Gamelan
 import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Tidal.Samples (clockTime)
-import WAGS.Lib.Tidal.Tidal (make, parse_, onTag, lnv, s)
+import WAGS.Lib.Tidal.Tidal (make, parse, onTag, lnv, s)
 
 wag :: AFuture
 wag = make 4.0
@@ -20,6 +20,6 @@ wag = make 4.0
                       lfo { phase: 0.0, freq: 8.0, amp: 0.2 }
           )
       $ onTag "1" (set (traversed <<< lnv) (const 0.2))
-      $ parse_ "BBPL1;0 [BPPL7,SBSL3;1]"
+      $ parse "BBPL1;0 [BPPL7,SBSL3;1]"
   , sounds: Gamelan.sounds
   }
