@@ -8,17 +8,17 @@ import Data.Homogeneous.Record (homogeneous, fromHomogeneous)
 import Data.Int (toNumber)
 import Data.Lens (set, traversed)
 import Data.Maybe (maybe)
-import Data.Variant.Maybe as VM
 import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor (lcmap)
 import Data.Tuple (fst, snd)
 import Data.Tuple.Nested ((/\))
+import Data.Variant.Maybe as VM
 import Math (pow)
-import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Tidal.Cycle (cycleFromSample_, cycleLength, r)
 import WAGS.Lib.Tidal.Cycle as C
-import WAGS.Lib.Tidal.Tidal (i, lnr, lnv, make, s, x)
+import WAGS.Lib.Tidal.Tidal (i, lnr, lnv, make, parse, s, x)
+import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Tidal.Types (Sample(..))
 
 dt = 0.11875 :: Number
@@ -38,14 +38,14 @@ seq3 = n.g4 :|
 seqs = seq0 <> seq1 <> seq2 <> seq3
 
 mkSnd = (_ `mod` 7) >>> case _ of
-  0 -> C.can_0
-  1 -> C.dr_22 -- C.can_4
-  2 -> C.dr_31 -- C.can_2
-  3 -> C.can_9
-  4 -> C.jungle_3 -- C.can_10
-  5 -> C.can_12
-  6 -> C.chin_1 -- C.can_13
-  _ -> C.can_0
+  0 -> parse "can:0" -- C.can_0
+  1 -> parse "dr:22" -- C.dr_22 -- C.can_4
+  2 -> parse "dr:31" -- C.dr_31 -- C.can_2
+  3 -> parse "can:9" -- C.can_9
+  4 -> parse "jungle:3" -- C.jungle_3 -- C.can_10
+  5 -> parse "can:12" -- C.can_12
+  6 -> parse "chin:1" -- C.chin_1 -- C.can_13
+  _ -> parse "can:0" -- C.can_0
 
 percs = i <^> mapWithIndex (\x _ -> let md = maybe 0 (add 1) x `mod` 32 in let spl = set (traversed <<< traversed <<< lnv) (lcmap unwrap \{ normalizedBigCycleTime } -> min 1.0 $ normalizedBigCycleTime * 4.0) $ mkSnd md in if md == 15 || md == 23 || md == 31 then i spl [spl] else spl) seqs
 

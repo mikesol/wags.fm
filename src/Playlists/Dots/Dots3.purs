@@ -2,14 +2,11 @@ module Playlists.Dots.Dots3 where
 
 import Prelude
 
-import Data.Lens (set)
-import Data.Newtype (unwrap)
-import Data.Profunctor (lcmap)
 import WAGS.Create.Optionals (highpass, pan)
 import WAGS.Lib.Learn.Oscillator (lfo)
-import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Tidal.FX (fx, goodbye, hello)
-import WAGS.Lib.Tidal.Tidal (changeRate, lvt, make, parse, s)
+import WAGS.Lib.Tidal.Tidal (addEffect, changeRate, make, parse, s)
+import WAGS.Lib.Tidal.Types (AFuture)
 
 dt = 0.11875 :: Number
 
@@ -24,8 +21,7 @@ wag =
       <notes:8 notes:9>"""
     , fire:
         map
-          ( set lvt
-              $ lcmap unwrap \{ clockTime } -> fx
+          ( addEffect \{ clockTime } -> fx
                   $ goodbye
                   $ pan
                       (lfo { phase: 0.0, amp: 1.0, freq: 0.1 } clockTime)

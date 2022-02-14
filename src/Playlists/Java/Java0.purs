@@ -3,7 +3,7 @@ module Playlists.Java.Java0 where
 import Prelude
 
 import Data.Newtype (unwrap)
-import Data.Lens (_Just, set, traversed)
+import Data.Lens (set, traversed)
 import Data.Profunctor (lcmap)
 import WAGS.Lib.Learn.Oscillator (lfo)
 import WAGS.Lib.Sounds.Gamelan as Gamelan

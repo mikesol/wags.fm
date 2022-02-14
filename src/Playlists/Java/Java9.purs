@@ -2,13 +2,10 @@ module Playlists.Java.Java9 where
 
 import Prelude
 
-import Data.Lens (_Just, set, traversed)
-import Data.Newtype (unwrap)
-import Data.Profunctor (lcmap)
+import Data.Lens (set, traversed)
 import WAGS.Lib.Sounds.Gamelan as Gamelan
 import WAGS.Lib.Tidal.Types (AFuture)
-import WAGS.Lib.Tidal.Samples (normalizedSampleTime, sampleTime)
-import WAGS.Lib.Tidal.Tidal (lnr, lnv, make, onTag, parse, s)
+import WAGS.Lib.Tidal.Tidal (lnv, make, onTag, parse, s)
 
 wag :: AFuture
 wag = make 4.0

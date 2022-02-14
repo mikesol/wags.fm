@@ -8,9 +8,9 @@ import Data.Profunctor (lcmap)
 import Math ((%))
 import WAGS.Create.Optionals (highpass, pan)
 import WAGS.Lib.Learn.Oscillator (lfo)
-import WAGS.Lib.Tidal.Types (AFuture)
 import WAGS.Lib.Tidal.FX (fx, goodbye, hello)
-import WAGS.Lib.Tidal.Tidal (changeRate, lnr, lnv, lvt, make, onTag, parse, s)
+import WAGS.Lib.Tidal.Tidal (addEffect, changeRate, lnr, lnv, make, onTag, parse, s)
+import WAGS.Lib.Tidal.Types (AFuture)
 
 m2 = 4.0 * 1.0 * 60.0 / 111.0 :: Number
 
@@ -30,14 +30,13 @@ wag =
         tink:2 tink:0 tink:3 """
     , wind:
         map
-          ( set lvt
-              $ lcmap unwrap \{ clockTime } ->
-                  let
-                    mody = clockTime % (m2 * 2.0)
-                  in
-                    fx
-                      $ goodbye
-                      $ highpass (200.0 + mody * 100.0) hello
+          ( addEffect \{ clockTime } ->
+              let
+                mody = clockTime % (m2 * 2.0)
+              in
+                fx
+                  $ goodbye
+                  $ highpass (200.0 + mody * 100.0) hello
           ) $ s
           $ onTag "ph"
               ( set (traversed <<< lnr)
@@ -62,28 +61,26 @@ wag =
           ~ ~ pluck:1;pk ~ ~ ~ ~ ~ """
     , fire:
         map
-          ( set lvt
-              ( lcmap unwrap \{ clockTime } -> fx
-                  ( goodbye $ pan
-                      ( lfo
-                          { phase: 0.0
-                          , amp: 1.0
-                          , freq: 0.2
-                          }
-                          clockTime + 0.0
-                      )
-                      { myhp:
-                          highpass
-                            ( lfo
-                                { phase: 0.0
-                                , amp: 2000.0
-                                , freq: 0.4
-                                }
-                                clockTime + 2000.0
-                            )
-                            hello
+          ( addEffect \{ clockTime } -> fx
+              ( goodbye $ pan
+                  ( lfo
+                      { phase: 0.0
+                      , amp: 1.0
+                      , freq: 0.2
                       }
+                      clockTime + 0.0
                   )
+                  { myhp:
+                      highpass
+                        ( lfo
+                            { phase: 0.0
+                            , amp: 2000.0
+                            , freq: 0.4
+                            }
+                            clockTime + 2000.0
+                        )
+                        hello
+                  }
               )
           ) $ s "~ insect:2 ~ insect ~ insect:1 ~ speechless:2 ~"
     }
