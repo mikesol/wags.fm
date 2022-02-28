@@ -46,7 +46,7 @@ import WAGS.Lib.Tidal.Engine (engine)
 import WAGS.Lib.Tidal.Tidal (openFuture)
 import WAGS.Lib.Tidal.Types (AFuture, SampleCache, TidalRes)
 import WAGS.Lib.Tidal.Util (doDownloads', r2b)
-import WAGS.Run (run, Run)
+import WAGS.Run (run, BehavingRun)
 import WAGS.WebAPI (AudioContext)
 
 -----------
@@ -385,7 +385,7 @@ playWags
       trigger /\ world <- snd $ triggerWorld (audioCtx /\ (pure (pure {} /\ pure {})))
       unsub <- liftEffect $ subscribe
         (run trigger world { easingAlgorithm } (ffiAudio) piece)
-        (\({ res } :: Run TidalRes Analysers) -> setTidalRes res)
+        (\({ res } :: BehavingRun TidalRes Analysers) -> setTidalRes res)
       liftEffect do
         setNewWagPush push
         setAudioContext audioCtx
